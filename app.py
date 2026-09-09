@@ -28,6 +28,7 @@ Menjalankan aplikasi:
 """
 
 from datetime import datetime
+import os
 
 import numpy as np
 import pandas as pd
@@ -37,6 +38,7 @@ import plotly.graph_objects as go
 import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
+from PIL import Image
 
 from uvip_core import (
     CORRIDOR_SHEETS, RAW_CLASSES, INDICATORS, DEFAULT_WEIGHTS, UVI_SCALE,
@@ -409,49 +411,139 @@ with tab_compare:
 # TAB 5 — TENTANG & METODOLOGI
 # ----------------------------------------------------------------------------
 with tab_about:
+    st.markdown("### 📋 Tentang Platform")
     st.markdown(
         """
-        ### Tentang Platform
-
         **UVIP Malang** (*Urban Visual Intelligence Platform*) adalah piranti WebGIS Analytics
         *smart city* yang dikembangkan pada Penelitian Terapan
         *"Pengembangan Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
-        Berbasis AI untuk Smart City Kota Malang"* (
-        Tim: Dr. Herry Santosa, Dr. Adipandang Yudono, Dr. Herman Tolle, Prof. Jenny Ernawati, Dr. Agung
-        Setia Budi —  Universitas Brawijaya).
-
-        **Kata kunci konteks:** Urban Visual Index · Street View Imagery ·
-        Artificial Intelligence · Ruang Terbuka Kota · Smart City
-
-        #### Alur Metodologi yang Diadaptasi
-        1. **Pengumpulan citra street-level** pada segmen koridor ruang terbuka
-           (mis. Kayutangan, Tugu, Lafayette–PLN, Alun-Alun Merdeka).
-        2. **Deteksi elemen visual berbasis AI** (semantic segmentation) menghasilkan
-           proporsi kelas: *Ground, Building, Traffic sign, Vegetation, Sky, Human,
-           Vehicle 4w/2w*.
-        3. **Perhitungan 8 indikator visual komposit**: Building Visibility,
-           Vegetation Coverage, Sky Openness, Ground Accessibility, Human Activity,
-           Vehicle Intensity, Traffic Infrastructure, Heritage Dominance.
-        4. **Pembobotan & agregasi** menjadi **Urban Visual Index (UVI)** — pada
-           platform ini bobot dapat diubah interaktif untuk mensimulasikan skenario
-           preferensi publik/kebijakan (adaptasi ringan dari pendekatan AHP pada
-           proposal, yang di lapangan dikalibrasi melalui survei preferensi publik).
-        5. **Visualisasi & simulasi** pada dashboard: peta hotspot, radar indikator,
-           simulasi what-if perubahan parameter visual, dan perbandingan antar
-           koridor — sebagai *bukti konsep* modul dashboard yang diusulkan.
-
-        #### Keterbatasan Prototipe
-        - Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
-          demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
-          responden, sesuai target proposal) dan analisis statistik lanjutan.
-        - Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
-          model AI *end-to-end* yang berjalan otomatis pada citra baru); integrasi
-          model CNN/ViT untuk skoring citra baru merupakan pengembangan lanjutan
-          sesuai roadmap penelitian 2025–2027 (Gambar Road Map proposal).
-        - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
-          regenerasi citra.
+        Berbasis AI untuk Smart City Kota Malang"* 
         """
     )
+    
+    st.markdown(
+        """
+        **Kata kunci konteks:** Urban Visual Index · Street View Imagery ·
+        Artificial Intelligence · Ruang Terbuka Kota · Smart City
+        """
+    )
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### 🎯 Alur Metodologi yang Diadaptasi")
+        st.markdown(
+            """
+            1. **Pengumpulan citra street-level** pada segmen koridor ruang terbuka
+               (mis. Kayutangan, Tugu, Lafayette–PLN, Alun-Alun Merdeka).
+            2. **Deteksi elemen visual berbasis AI** (semantic segmentation) menghasilkan
+               proporsi kelas: *Ground, Building, Traffic sign, Vegetation, Sky, Human,
+               Vehicle 4w/2w*.
+            3. **Perhitungan 8 indikator visual komposit**: Building Visibility,
+               Vegetation Coverage, Sky Openness, Ground Accessibility, Human Activity,
+               Vehicle Intensity, Traffic Infrastructure, Heritage Dominance.
+            4. **Pembobotan & agregasi** menjadi **Urban Visual Index (UVI)** — pada
+               platform ini bobot dapat diubah interaktif untuk mensimulasikan skenario
+               preferensi publik/kebijakan.
+            5. **Visualisasi & simulasi** pada dashboard: peta hotspot, radar indikator,
+               simulasi what-if perubahan parameter visual, dan perbandingan antar
+               koridor.
+            """
+        )
+    
+    with col2:
+        st.markdown("#### ⚠️ Keterbatasan Prototipe")
+        st.markdown(
+            """
+            - Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
+              demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
+              responden) dan analisis statistik lanjutan.
+            - Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
+              model AI *end-to-end*).
+            - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
+              regenerasi citra.
+            """
+        )
+    
+    st.markdown("---")
+    st.markdown("#### 👨‍🔬 Tim Peneliti UVIP Malang")
+    
+    # Data tim peneliti
+    researchers = [
+        {
+            "name": "Dr. Herry Santosa",
+            "image": "images/herry santosa.jpeg",
+            "expertise": "Ahli Perencanaan Wilayah dan Kota | Urban Design | Smart City",
+            "role": "Ketua Tim Peneliti"
+        },
+        {
+            "name": "Dr. Adipandang Yudono",
+            "image": "images/Adipandang Yudono.jpeg",
+            "expertise": "Ahli Sistem Informasi Geografis | Remote Sensing | Analisis Spasial",
+            "role": "Anggota Tim Peneliti"
+        },
+        {
+            "name": "Dr. Herman Tolle",
+            "image": "images/herman tolle.png",
+            "expertise": "Ahli Teknologi Informasi | Sistem Cerdas | Human-Computer Interaction",
+            "role": "Anggota Tim Peneliti"
+        },
+        {
+            "name": "Prof. Jenny Ernawati",
+            "image": "images/jenny ernawati.jpeg",
+            "expertise": "Ahli Arsitektur | Desain Perkotaan | Lingkungan Binaan",
+            "role": "Anggota Tim Peneliti"
+        },
+        {
+            "name": "Dr. Agung Setia Budi",
+            "image": "images/Agung Setia Budi.jpg",
+            "expertise": "Ahli Kecerdasan Buatan | Computer Vision | Data Science",
+            "role": "Anggota Tim Peneliti"
+        }
+    ]
+    
+    # Tampilkan profil peneliti dalam grid
+    cols = st.columns(len(researchers))
+    for idx, (col, researcher) in enumerate(zip(cols, researchers)):
+        with col:
+            # Coba load gambar
+            try:
+                if os.path.exists(researcher["image"]):
+                    img = Image.open(researcher["image"])
+                    st.image(img, use_container_width=True)
+                else:
+                    # Fallback jika gambar tidak ditemukan
+                    st.markdown(
+                        f"""
+                        <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+                                    border-radius:10px;padding:20px;text-align:center;color:white;">
+                            <div style="font-size:40px;">👤</div>
+                            <div style="font-weight:bold;margin-top:10px;">
+                                {researcher['name'].replace('Dr. ', '').replace('Prof. ', '')}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+            except Exception:
+                st.markdown(
+                    f"""
+                    <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+                                border-radius:10px;padding:20px;text-align:center;color:white;">
+                        <div style="font-size:40px;">👤</div>
+                        <div style="font-weight:bold;margin-top:10px;">
+                            {researcher['name'].replace('Dr. ', '').replace('Prof. ', '')}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            st.markdown(f"**{researcher['name']}**")
+            st.caption(f"*{researcher['role']}*")
+            st.caption(f"📌 {researcher['expertise']}")
+    
+    st.markdown("---")
+    st.caption("📚 Universitas Brawijaya - Fakultas Teknik | Program Studi Perencanaan Wilayah dan Kota")
 
 # ----------------------------------------------------------------------------
 # TAB 6 — DATA & UNDUH
