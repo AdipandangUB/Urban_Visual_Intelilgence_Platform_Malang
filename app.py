@@ -652,7 +652,7 @@ if header_bg_set:
     st.markdown(
         """
         <div class="header-with-bg">
-            <h2>🏙️ UVIP - *Urban Visual Intelligence Platform* Malang</h2>
+            <h2>🏙️ UVIP - <i>Urban Visual Intelligence Platform<i> Malang</h2>
             <p>
                 Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
                 Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
