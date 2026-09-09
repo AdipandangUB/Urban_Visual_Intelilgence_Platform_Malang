@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -255,7 +256,7 @@ def make_base_map(center, zoom_start, basemap_name):
 # 2. SIDEBAR
 # ----------------------------------------------------------------------------
 
-# CSS tambahan untuk sidebar dengan background putih solid untuk expander
+# CSS tambahan untuk sidebar dengan styling khusus untuk expander
 st.markdown(
     """
     <style>
@@ -284,6 +285,7 @@ st.markdown(
         color: white !important;
         border: 1px solid rgba(255, 255, 0, 0.3);
     }
+    
     /* Atur warna slider di luar expander */
     [data-testid="stSidebar"] .stSlider > div > div > div {
         background-color: rgba(255,255,255,0.3) !important;
@@ -292,70 +294,80 @@ st.markdown(
         background-color: #ffffff !important;
     }
     
-    /* ===== EXPANDER DENGAN BACKGROUND PUTIH SOLID ===== */
+    /* ===== EXPANDER DENGAN BACKGROUND HITAM DAN BORDER PUTIH BOLD ===== */
     /* Container utama expander */
     [data-testid="stSidebar"] .streamlit-expander {
-        background-color: rgba(255, 255, 255, 0.0) !important;
+        background-color: transparent !important;
         border-radius: 10px;
         margin-bottom: 8px;
     }
     
-    /* Header expander - selalu terlihat dengan background putih solid */
+    /* Header expander - Background hitam, border putih bold */
     [data-testid="stSidebar"] .streamlit-expanderHeader {
-        color: #1a1a1a !important;
-        background-color: rgba(255, 255, 255, 0.95) !important;
+        color: #ffffff !important;
+        background-color: rgba(0, 0, 0, 0.9) !important;
+        background: #1a1a1a !important;
+        border: 3px solid #ffffff !important;
         border-radius: 10px !important;
-        border: 2px solid rgba(200, 200, 200, 0.6) !important;
-        padding: 12px 16px !important;
-        font-weight: 600 !important;
+        padding: 14px 18px !important;
+        font-weight: 700 !important;
         font-size: 14px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
         transition: all 0.3s ease;
         cursor: pointer;
+        letter-spacing: 0.5px;
     }
     
     /* Hover effect untuk header */
     [data-testid="stSidebar"] .streamlit-expanderHeader:hover {
-        background-color: rgba(255, 255, 255, 1) !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-        border-color: rgba(100, 100, 100, 0.8) !important;
+        background-color: rgba(0, 0, 0, 1) !important;
+        background: #000000 !important;
+        border-color: #f0f0f0 !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+        transform: scale(1.01);
     }
     
-    /* Warna icon chevron */
+    /* Warna icon chevron - putih */
     [data-testid="stSidebar"] .streamlit-expanderHeader svg {
-        color: #1a1a1a !important;
-        fill: #1a1a1a !important;
+        color: #ffffff !important;
+        fill: #ffffff !important;
     }
     
-    /* Content expander - background putih solid saat terbuka */
+    /* Content expander - Background hitam dengan border putih */
     [data-testid="stSidebar"] .streamlit-expanderContent {
-        background-color: rgba(255, 255, 255, 0.95) !important;
+        background-color: rgba(20, 20, 20, 0.95) !important;
+        background: #1a1a1a !important;
         border-radius: 0 0 10px 10px !important;
         padding: 16px 16px 20px 16px !important;
-        border-left: 2px solid rgba(200, 200, 200, 0.6) !important;
-        border-right: 2px solid rgba(200, 200, 200, 0.6) !important;
-        border-bottom: 2px solid rgba(200, 200, 200, 0.6) !important;
+        border-left: 3px solid #ffffff !important;
+        border-right: 3px solid #ffffff !important;
+        border-bottom: 3px solid #ffffff !important;
         margin-top: -2px;
     }
     
-    /* Teks di dalam expander - warna gelap */
+    /* Teks di dalam expander - warna putih */
     [data-testid="stSidebar"] .streamlit-expanderContent .stMarkdown,
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider label,
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider p,
     [data-testid="stSidebar"] .streamlit-expanderContent .stMarkdown p {
-        color: #1a1a1a !important;
+        color: #ffffff !important;
         text-shadow: none !important;
     }
     
-    /* Slider di dalam expander */
+    /* Slider di dalam expander - dengan latar putih transparan */
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div {
-        background-color: rgba(0,0,0,0.15) !important;
+        background-color: rgba(255,255,255,0.2) !important;
     }
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div > div {
-        background-color: #0f2027 !important;
+        background-color: #ffffff !important;
     }
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider label {
-        color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+    
+    /* Nilai slider di dalam expander - putih */
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider .stMarkdown {
+        color: #ffffff !important;
     }
     
     /* Button di dalam sidebar */
