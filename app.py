@@ -411,45 +411,47 @@ with tab_compare:
 with tab_about:
     st.markdown(
         """
-### Tentang Platform
+        ### Tentang Platform
 
-**UVIP Malang** (*Urban Visual Intelligence Platform*) adalah piranti WebGIS Analytics
-*smart city* yang dikembangkan pada Penelitian Terapan
-*"Pengembangan Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
-Berbasis AI untuk Smart City Kota Malang"* (
-Tim: Dr. Herry Santosa, Dr. Adipandang Yudono, Dr. Herman Tolle, Prof. Jenny Ernawati, Dr. Agung
-Setia Budi —  Universitas Brawijaya).
+        **UVIP Malang** (*Urban Visual Intelligence Platform*) adalah piranti WebGIS Analytics
+        *smart city* yang dikembangkan pada Penelitian Terapan
+        *"Pengembangan Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
+        Berbasis AI untuk Smart City Kota Malang"* (
+        Tim: Dr. Herry Santosa, Dr. Adipandang Yudono, Dr. Herman Tolle, Prof. Jenny Ernawati, Dr. Agung
+        Setia Budi —  Universitas Brawijaya).
 
-**Kata kunci konteks:** Urban Visual Index · Street View Imagery ·
-Artificial Intelligence · Ruang Terbuka Kota · Smart City
+        **Kata kunci konteks:** Urban Visual Index · Street View Imagery ·
+        Artificial Intelligence · Ruang Terbuka Kota · Smart City
 
-#### Alur Metodologi yang Diadaptasi
-1. **Pengumpulan citra street-level** pada segmen koridor ruang terbuka
-   (mis. Kayutangan, Tugu, Lafayette–PLN, Alun-Alun Merdeka).
-2. **Deteksi elemen visual berbasis AI** (semantic segmentation) menghasilkan
-   proporsi kelas: *Ground, Building, Traffic sign, Vegetation, Sky, Human,
-   Vehicle 4w/2w*.
-3. **Perhitungan 8 indikator visual komposit**: Building Visibility,
-   Vegetation Coverage, Sky Openness, Ground Accessibility, Human Activity,
-   Vehicle Intensity, Traffic Infrastructure, Heritage Dominance.
-4. **Pembobotan & agregasi** menjadi **Urban Visual Index (UVI)** — pada
-   platform ini bobot dapat diubah interaktif untuk mensimulasikan skenario
-   preferensi publik/kebijakan (adaptasi ringan dari pendekatan AHP pada
-   proposal, yang di lapangan dikalibrasi melalui survei preferensi publik).
-5. **Visualisasi & simulasi** pada dashboard: peta hotspot, radar indikator,
-   simulasi what-if perubahan parameter visual, dan perbandingan antar
-   koridor — sebagai *bukti konsep* modul dashboard yang diusulkan.
+        #### Alur Metodologi yang Diadaptasi
+        1. **Pengumpulan citra street-level** pada segmen koridor ruang terbuka
+           (mis. Kayutangan, Tugu, Lafayette–PLN, Alun-Alun Merdeka).
+        2. **Deteksi elemen visual berbasis AI** (semantic segmentation) menghasilkan
+           proporsi kelas: *Ground, Building, Traffic sign, Vegetation, Sky, Human,
+           Vehicle 4w/2w*.
+        3. **Perhitungan 8 indikator visual komposit**: Building Visibility,
+           Vegetation Coverage, Sky Openness, Ground Accessibility, Human Activity,
+           Vehicle Intensity, Traffic Infrastructure, Heritage Dominance.
+        4. **Pembobotan & agregasi** menjadi **Urban Visual Index (UVI)** — pada
+           platform ini bobot dapat diubah interaktif untuk mensimulasikan skenario
+           preferensi publik/kebijakan (adaptasi ringan dari pendekatan AHP pada
+           proposal, yang di lapangan dikalibrasi melalui survei preferensi publik).
+        5. **Visualisasi & simulasi** pada dashboard: peta hotspot, radar indikator,
+           simulasi what-if perubahan parameter visual, dan perbandingan antar
+           koridor — sebagai *bukti konsep* modul dashboard yang diusulkan.
 
-#### Keterbatasan Prototipe
-- Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
-  demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
-  responden, sesuai target proposal) dan analisis statistik lanjutan.
-- Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
-  model AI *end-to-end* yang berjalan otomatis pada citra baru); integrasi
-  model CNN/ViT untuk skoring citra baru merupakan pengembangan lanjutan
-  sesuai roadmap penelitian 2025–2027 (Gambar Road Map proposal).
-- Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
-  regenerasi citra.
+        #### Keterbatasan Prototipe
+        - Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
+          demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
+          responden, sesuai target proposal) dan analisis statistik lanjutan.
+        - Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
+          model AI *end-to-end* yang berjalan otomatis pada citra baru); integrasi
+          model CNN/ViT untuk skoring citra baru merupakan pengembangan lanjutan
+          sesuai roadmap penelitian 2025–2027 (Gambar Road Map proposal).
+        - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
+          regenerasi citra.
+        """
+    )
 
 # ----------------------------------------------------------------------------
 # TAB 6 — DATA & UNDUH
@@ -474,5 +476,5 @@ with tab_data:
 
 st.markdown("---")
 st.caption(
-    "WebGIS Analytics dikembangkan oleh Tim UVIP MAlang - Universitas Brawijaya "
+    "WebGIS Analytics dikembangkan oleh Tim UVIP Malang - Universitas Brawijaya "
 )
