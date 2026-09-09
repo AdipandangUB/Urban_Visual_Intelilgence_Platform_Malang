@@ -476,5 +476,6 @@ with tab_data:
 
 st.markdown("---")
 st.caption(
-    "WebGIS Analytics dikembangkan oleh Tim UVIP Malang - Universitas Brawijaya "
+    "WebGIS Analytics dikembangkan oleh Tim UVIP Malang - Universitas Brawijaya (Dr. Herry Santosa, Dr. Adipandang Yudono, Dr. Herman Tolle, Prof. Jenny Ernawati, Dr. Agung
+        Setia Budi) "
 )
