@@ -7,8 +7,8 @@ untuk Smart City Kota Malang
 
 Dikembangkan mengacu pada proposal Penelitian Terapan:
 "Pengembangan Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
-Berbasis AI untuk Smart City Kota Malang" (Santosa, Yudono, Tolle, Ernawati,
-Setia Budi — EIIS Lab, PWK Universitas Brawijaya).
+Berbasis AI untuk Smart City Kota Malang" dengan Peneliti Dr. Herry Santosa,Dr Adipandang Yudono,Dr Herman Tolle,Prof. Jenny Ernawati,
+Dr. Agung Setia Budi - Universitas Brawijaya.
 
 Konteks kunci yang diadaptasi ke dalam aplikasi ini:
 - Urban Visual Index (UVI)      -> indeks komposit kualitas visual per titik/segmen
@@ -18,7 +18,7 @@ Konteks kunci yang diadaptasi ke dalam aplikasi ini:
 - Smart City                    -> dashboard WebGIS untuk pemantauan & simulasi kebijakan
 
 Sumber data (Google Sheets hasil analisis AI computer-vision atas citra
-street-level, disusun tim PKM/EIIS Lab):
+street-level, disusun tim ):
   gid=1062597004, 446487299, 891123454, 1869212551, 385636298
 (lihat CORRIDOR_SHEETS di bawah — silakan sesuaikan nama koridor jika urutan
 tab pada spreadsheet Anda berbeda).
@@ -78,11 +78,7 @@ def _sheet_csv_url(gid: str) -> str:
     return sheet_csv_url(gid)
 
 
-# Basemap gratis tanpa API key. CartoDB (basemaps.cartocdn.com) kini
-# mewajibkan API key untuk trafik non-terdaftar, sehingga diganti dengan
-# basemap Esri (server.arcgisonline.com) & OpenStreetMap standar yang tetap
-# gratis dan tidak menampilkan watermark "API KEY REQUIRED".
-# (Opsi Esri Dark/Light Gray Canvas dihapus atas permintaan pengguna.)
+# Basemap 
 BASEMAPS = {
     "OpenStreetMap Standar": {
         "tiles": "OpenStreetMap",
@@ -112,7 +108,7 @@ def make_base_map(center, zoom_start, basemap_name):
 
 st.sidebar.markdown("## 🏙️ UVIP Malang")
 st.sidebar.caption(
-    "**U**rban **V**isual **I**ntelligence **P**latform — prototipe piranti TIK "
+    "**U**rban **V**isual **I**ntelligence **P**latform — piranti WebGIS Analytics "
     "*smart city* untuk menilai & mensimulasikan kualitas visual ruang terbuka "
     "Kota Malang berbasis AI."
 )
@@ -130,7 +126,6 @@ if demo_used:
 
 corridor_names = sorted(data_all["corridor"].unique()) if not data_all.empty else []
 
-# Pilihan koridor dibuat single-selection (dropdown), bukan multiselect.
 # selected_corridors tetap berupa list agar logika filtering di bawah tetap kompatibel.
 selected_corridor = st.sidebar.selectbox(
     "Pilih koridor / ruang terbuka",
@@ -157,8 +152,7 @@ if st.sidebar.button("↺ Reset bobot ke default"):
 st.sidebar.markdown("---")
 st.sidebar.caption(
     "Sumber data: hasil deteksi AI (computer vision) atas citra *street-level* "
-    "koridor Kota Malang, diproses tim EIIS Lab — PWK Universitas Brawijaya. "
-    "Mengadaptasi kerangka Urban Visual Index (Santosa dkk., 2025)."
+    "koridor Kota Malang, diproses tim Peneliti UVIP (Urban Visual Intelligence Platform) Malang - Universitas Brawijaya. "
 )
 
 df = data_all[data_all["corridor"].isin(selected_corridors)].copy() if not data_all.empty else data_all
@@ -419,12 +413,12 @@ with tab_about:
         """
 ### Tentang Platform
 
-**UVIP Malang** (*Urban Visual Intelligence Platform*) adalah prototipe piranti
-TIK *smart city* yang dikembangkan mengacu pada proposal Penelitian Terapan
+**UVIP Malang** (*Urban Visual Intelligence Platform*) adalah piranti WebGIS Analytics
+*smart city* yang dikembangkan pada Penelitian Terapan
 *"Pengembangan Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
-Berbasis AI untuk Smart City Kota Malang"* (Skema Hibah Penelitian Terapan,
-Tim: Herry Santosa, Adipandang Yudono, Herman Tolle, Jenny Ernawati, Agung
-Setia Budi — EIIS Lab, Departemen PWK, Fakultas Teknik, Universitas Brawijaya).
+Berbasis AI untuk Smart City Kota Malang"* (
+Tim: Dr. Herry Santosa, Dr. Adipandang Yudono, Dr. Herman Tolle, Prof. Jenny Ernawati, Dr. Agung
+Setia Budi —  Universitas Brawijaya).
 
 **Kata kunci konteks:** Urban Visual Index · Street View Imagery ·
 Artificial Intelligence · Ruang Terbuka Kota · Smart City
@@ -457,16 +451,6 @@ Artificial Intelligence · Ruang Terbuka Kota · Smart City
 - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
   regenerasi citra.
 
-#### Rujukan Utama
-Santosa, H. dkk. (2025). *Urban Visual Index (UVI) Based on Public
-Preferences for Evaluating the Visual-Spatial Comfort of Kayutangan,
-Indonesia.* Journal of the Malaysian Institute of Planners, 23(4), 199–214.
-
-Ito, K., Kang, Y., Zhang, Y., Zhang, F., & Biljecki, F. (2024). *Understanding
-urban perception with visual data: A systematic review.* Cities, 152.
-        """
-    )
-
 # ----------------------------------------------------------------------------
 # TAB 6 — DATA & UNDUH
 # ----------------------------------------------------------------------------
@@ -490,7 +474,5 @@ with tab_data:
 
 st.markdown("---")
 st.caption(
-    "Prototipe dikembangkan oleh EIIS Laboratory, Departemen Perencanaan Wilayah "
-    "dan Kota, Fakultas Teknik, Universitas Brawijaya — sebagai bukti konsep "
-    "dashboard *smart city* pada usulan Penelitian Terapan UVI-AI Kota Malang."
+    "WebGIS Analytics dikembangkan oleh Tim UVIP MAlang - Universitas Brawijaya "
 )
