@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -256,7 +255,7 @@ def make_base_map(center, zoom_start, basemap_name):
 # 2. SIDEBAR
 # ----------------------------------------------------------------------------
 
-# CSS tambahan untuk sidebar agar konten terlihat jelas dan expander memiliki background putih
+# CSS tambahan untuk sidebar dengan background putih solid untuk expander
 st.markdown(
     """
     <style>
@@ -285,58 +284,81 @@ st.markdown(
         color: white !important;
         border: 1px solid rgba(255, 255, 0, 0.3);
     }
-    /* Atur warna slider */
+    /* Atur warna slider di luar expander */
     [data-testid="stSidebar"] .stSlider > div > div > div {
         background-color: rgba(255,255,255,0.3) !important;
     }
     [data-testid="stSidebar"] .stSlider > div > div > div > div {
         background-color: #ffffff !important;
     }
-    /* Atur warna expander dengan background putih */
+    
+    /* ===== EXPANDER DENGAN BACKGROUND PUTIH SOLID ===== */
+    /* Container utama expander */
+    [data-testid="stSidebar"] .streamlit-expander {
+        background-color: rgba(255, 255, 255, 0.0) !important;
+        border-radius: 10px;
+        margin-bottom: 8px;
+    }
+    
+    /* Header expander - selalu terlihat dengan background putih solid */
     [data-testid="stSidebar"] .streamlit-expanderHeader {
         color: #1a1a1a !important;
         background-color: rgba(255, 255, 255, 0.95) !important;
-        border-radius: 8px;
-        border: 1px solid rgba(200, 200, 200, 0.5);
-        padding: 10px 15px !important;
+        border-radius: 10px !important;
+        border: 2px solid rgba(200, 200, 200, 0.6) !important;
+        padding: 12px 16px !important;
         font-weight: 600 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        font-size: 14px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
+    
+    /* Hover effect untuk header */
     [data-testid="stSidebar"] .streamlit-expanderHeader:hover {
         background-color: rgba(255, 255, 255, 1) !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+        border-color: rgba(100, 100, 100, 0.8) !important;
     }
+    
+    /* Warna icon chevron */
     [data-testid="stSidebar"] .streamlit-expanderHeader svg {
         color: #1a1a1a !important;
+        fill: #1a1a1a !important;
     }
+    
+    /* Content expander - background putih solid saat terbuka */
     [data-testid="stSidebar"] .streamlit-expanderContent {
         background-color: rgba(255, 255, 255, 0.95) !important;
-        border-radius: 0 0 8px 8px;
-        padding: 15px 15px 20px 15px !important;
-        border-left: 1px solid rgba(200, 200, 200, 0.3);
-        border-right: 1px solid rgba(200, 200, 200, 0.3);
-        border-bottom: 1px solid rgba(200, 200, 200, 0.3);
-        margin-bottom: 5px;
+        border-radius: 0 0 10px 10px !important;
+        padding: 16px 16px 20px 16px !important;
+        border-left: 2px solid rgba(200, 200, 200, 0.6) !important;
+        border-right: 2px solid rgba(200, 200, 200, 0.6) !important;
+        border-bottom: 2px solid rgba(200, 200, 200, 0.6) !important;
+        margin-top: -2px;
     }
-    /* Atur teks di dalam expander agar gelap */
+    
+    /* Teks di dalam expander - warna gelap */
     [data-testid="stSidebar"] .streamlit-expanderContent .stMarkdown,
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider label,
-    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider p {
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider p,
+    [data-testid="stSidebar"] .streamlit-expanderContent .stMarkdown p {
         color: #1a1a1a !important;
         text-shadow: none !important;
     }
-    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider .stMarkdown {
-        color: #1a1a1a !important;
-        text-shadow: none !important;
-    }
-    /* Atur nilai slider di dalam expander */
+    
+    /* Slider di dalam expander */
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div {
         background-color: rgba(0,0,0,0.15) !important;
     }
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div > div {
         background-color: #0f2027 !important;
     }
-    /* Atur button di dalam sidebar */
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider label {
+        color: #1a1a1a !important;
+    }
+    
+    /* Button di dalam sidebar */
     [data-testid="stSidebar"] .stButton button {
         background-color: rgba(255, 255, 255, 0.15) !important;
         color: white !important;
@@ -345,7 +367,8 @@ st.markdown(
     [data-testid="stSidebar"] .stButton button:hover {
         background-color: rgba(255, 255, 255, 0.25) !important;
     }
-    /* Atur selectbox */
+    
+    /* Selectbox */
     [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
         background-color: rgba(0, 0, 0, 0.2) !important;
         border-radius: 6px;
@@ -353,11 +376,13 @@ st.markdown(
     [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
         color: white !important;
     }
-    /* Atur checkbox */
+    
+    /* Checkbox */
     [data-testid="stSidebar"] .stCheckbox label {
         color: white !important;
     }
-    /* Mengatur scrollbar sidebar */
+    
+    /* Scrollbar sidebar */
     [data-testid="stSidebar"] ::-webkit-scrollbar {
         width: 6px;
     }
@@ -371,13 +396,15 @@ st.markdown(
     [data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.5);
     }
+    
     /* Hilangkan background pada main content */
     .main .block-container {
         background-color: transparent !important;
         backdrop-filter: none !important;
         padding: 1rem 2rem;
     }
-    /* Buat card metric tetap terbaca */
+    
+    /* Card metric */
     div[data-testid="metric-container"] {
         background-color: rgba(255, 255, 255, 0.92) !important;
         border-radius: 10px;
@@ -385,7 +412,8 @@ st.markdown(
         border: 1px solid rgba(200, 200, 200, 0.3);
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    /* Atur tab agar tetap rapi */
+    
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         background-color: rgba(255, 255, 255, 0.85) !important;
         border-radius: 8px;
