@@ -145,8 +145,8 @@ except ImportError:
 st.set_page_config(
     page_title="UVIP Malang — Platform Intelijen Visual Perkotaan",
     page_icon="🏙️",
-    layout="lebar",
-    initial_sidebar_state="diperluas",
+    layout="wide",
+    initial_sidebar_state="expanded",  # HARUS menggunakan bahasa Inggris: "auto", "expanded", atau "collapsed"
 )
 
 # ----------------------------------------------------------------------------
