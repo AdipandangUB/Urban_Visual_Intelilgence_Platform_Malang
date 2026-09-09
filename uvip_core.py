@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 uvip_core.py — logika parsing data & perhitungan UVI, dipisah dari app.py
 agar dapat diuji tanpa dependensi Streamlit.
