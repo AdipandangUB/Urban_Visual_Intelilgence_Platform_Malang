@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -122,7 +121,7 @@ def set_sidebar_background(image_path):
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(0, 0, 0, 0.5);
+                    background-color: rgba(0, 0, 0, 0.6);
                     z-index: 0;
                 }}
                 [data-testid="stSidebar"] > * {{
@@ -285,6 +284,48 @@ st.markdown(
         text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
         background-color: rgba(0,0,0,0.3) !important;
     }
+    /* Hilangkan background pada main content */
+    .main .block-container {
+        background-color: transparent !important;
+        backdrop-filter: none !important;
+        padding: 1rem 2rem;
+    }
+    /* Buat card metric tetap terbaca */
+    div[data-testid="metric-container"] {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px solid rgba(200, 200, 200, 0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    /* Atur tab agar tetap rapi */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: rgba(255, 255, 255, 0.85) !important;
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid rgba(200, 200, 200, 0.2);
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        border-radius: 6px;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background-color: #ffffff !important;
+        border: 1px solid #0f2027;
+    }
+    /* Atur konten dalam tab */
+    .stTabs [role="tabpanel"] {
+        background-color: rgba(255, 255, 255, 0.0) !important;
+        padding-top: 1rem;
+    }
+    /* Atur elemen lain agar transparan */
+    .stDataFrame, .stTable, .stPlotlyChart {
+        background-color: rgba(255, 255, 255, 0.0) !important;
+    }
+    /* Atur markdown dan teks */
+    .stMarkdown, .stText {
+        color: #1a1a1a !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -385,48 +426,6 @@ else:
 if df.empty:
     st.error("Tidak ada data untuk ditampilkan. Periksa koneksi atau pilihan koridor di sidebar.")
     st.stop()
-
-# CSS untuk card metric agar transparan dengan background
-st.markdown(
-    """
-    <style>
-    div[data-testid="metric-container"] {
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        backdrop-filter: blur(10px);
-        border-radius: 10px;
-        padding: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    div[data-testid="metric-container"] label {
-        color: #1a1a1a !important;
-    }
-    div[data-testid="metric-container"] div {
-        color: #0f2027 !important;
-    }
-    /* Atur konten utama agar transparan */
-    .main .block-container {
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        backdrop-filter: blur(10px);
-        border-radius: 14px;
-        padding: 2rem 2rem;
-        margin-top: 1rem;
-    }
-    /* Atur tab agar transparan */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: rgba(255, 255, 255, 0.7) !important;
-        border-radius: 8px;
-        padding: 4px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255, 255, 255, 0.3) !important;
-    }
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Jumlah Koridor", f"{df['corridor'].nunique()}")
