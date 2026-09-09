@@ -827,7 +827,7 @@ with tab_sim:
         "#### 🧮 Simulasi Skenario Penataan\n"
         "Ubah proporsi elemen visual pada sebuah node (mis. menambah vegetasi, "
         "mengurangi signage/kendaraan) untuk melihat dampaknya terhadap skor UVI — "
-        "mensimulasikan modul *'perubahan parameter desain'* pada proposal."
+        "mensimulasikan modul *'perubahan parameter desain'*."
     )
 
     node_options2 = df["kode"] + " — " + df["corridor"]
@@ -870,8 +870,8 @@ with tab_sim:
     st.info(
         "Catatan metodologis: pada implementasi penuh, perubahan parameter desain "
         "ini idealnya ditarik balik dari citra tersimulasikan (mis. via image "
-        "in-painting / GAN) lalu dievaluasi ulang oleh model AI computer-vision, "
-        "sesuai rancangan modul simulasi pada proposal. Panel ini menyediakan "
+        "in-painting / GAN) lalu dievaluasi ulang oleh model AI computer-vision. "
+        "Panel ini menyediakan "
         "simulasi tingkat-indeks (index-level) sebagai bukti-konsep antarmuka.",
         icon="ℹ️",
     )
