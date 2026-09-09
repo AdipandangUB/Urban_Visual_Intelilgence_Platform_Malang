@@ -960,7 +960,7 @@ with tab_about:
         {
             "name": "Dr. Adipandang Yudono",
             "image": "images/Adipandang Yudono.jpeg",
-            "expertise": "Ahli *Spatial Data Science* | *GIS Programmer* | *Smart Cities* | *GeoAI* ",
+            "expertise": "Ahli *Spatial Data Science* | *GIS Programmer & Developer* | *Smart Cities* | *GeoAI* ",
             "role": "Anggota Tim Peneliti"
         },
         {
