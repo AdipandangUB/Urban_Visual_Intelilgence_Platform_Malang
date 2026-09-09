@@ -686,12 +686,31 @@ if df.empty:
     st.error("Tidak ada data untuk ditampilkan. Periksa koneksi atau pilihan koridor di sidebar.")
     st.stop()
 
+# ----------------------------------------------------------------------------
+# 3.1 METRIK DASHBOARD (Dengan Penanganan NaN)
+# ----------------------------------------------------------------------------
+
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Jumlah Koridor", f"{df['corridor'].nunique()}")
+
+# Hitung jumlah titik/node
 k2.metric("Jumlah Titik/Node", f"{len(df)}")
-k3.metric("Rata-rata UVI", f"{df['UVI'].mean():.2f} / 10")
-best = df.loc[df["UVI"].idxmax()]
-k4.metric("Titik Terbaik", f"{best['kode']} ({best['UVI']:.2f})", help=str(best["corridor"]))
+
+# Hitung rata-rata UVI dengan penanganan NaN
+uvi_mean = df['UVI'].mean()
+if pd.isna(uvi_mean):
+    k3.metric("Rata-rata UVI", "Data tidak tersedia")
+else:
+    k3.metric("Rata-rata UVI", f"{uvi_mean:.2f} / 10")
+
+# Cari node terbaik dengan penanganan NaN
+if not df['UVI'].isna().all():
+    # Ada nilai UVI yang valid
+    best_idx = df['UVI'].idxmax()
+    best = df.loc[best_idx]
+    k4.metric("Titik Terbaik", f"{best['kode']} ({best['UVI']:.2f})", help=str(best['corridor']))
+else:
+    k4.metric("Titik Terbaik", "Tidak tersedia")
 
 st.markdown("")
 
@@ -715,9 +734,12 @@ with tab_map:
         radius = st.slider("Radius peta panas", 10, 40, 22)
 
     with left:
+        # Filter data yang memiliki koordinat dan UVI valid
         valid = df.dropna(subset=["lat", "lon"])
+        valid = valid[valid["UVI"].notna()]  # Hanya ambil yang UVI-nya valid
+        
         if valid.empty:
-            st.info("Tidak ada koordinat valid pada data terpilih.")
+            st.info("Tidak ada koordinat valid atau skor UVI pada data terpilih.")
         else:
             center = [valid["lat"].mean(), valid["lon"].mean()]
             fmap = make_base_map(center, 17, basemap_name)
@@ -773,8 +795,11 @@ with tab_indicators:
             for ind in INDICATORS:
                 col = f"uvi::{ind}"
                 if col in sub.columns:
-                    rows.append({"corridor": corridor, "indikator": ind,
-                                 "nilai": pd.to_numeric(sub[col], errors="coerce").mean()})
+                    # Hitung mean dengan ignore NaN
+                    mean_val = pd.to_numeric(sub[col], errors="coerce").mean()
+                    if not pd.isna(mean_val):
+                        rows.append({"corridor": corridor, "indikator": ind,
+                                     "nilai": mean_val})
         radar_df = pd.DataFrame(rows)
         if not radar_df.empty:
             fig = go.Figure()
@@ -788,6 +813,8 @@ with tab_indicators:
                 showlegend=True, height=460, margin=dict(t=20, b=20),
             )
             st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Tidak ada data indikator yang valid untuk ditampilkan.")
 
     with c2:
         st.markdown("#### Komposisi Elemen Visual (deteksi AI)")
@@ -819,6 +846,8 @@ with tab_indicators:
         box_fig = px.box(box_df, x="indikator", y="nilai", color="indikator", points="all")
         box_fig.update_layout(showlegend=False, height=420)
         st.plotly_chart(box_fig, use_container_width=True)
+    else:
+        st.info("Tidak ada data distribusi yang valid untuk ditampilkan.")
 
 # ----------------------------------------------------------------------------
 # TAB 3 — SIMULASI SKENARIO (what-if penataan ruang terbuka)
@@ -882,28 +911,37 @@ with tab_sim:
 # ----------------------------------------------------------------------------
 with tab_compare:
     st.markdown("#### Peringkat Rata-rata UVI per Koridor")
+    # Hitung per koridor dengan dropna
     corr_avg = df.groupby("corridor")["UVI"].agg(["mean", "std", "count"]).reset_index()
+    # Hapus koridor yang mean-nya NaN
+    corr_avg = corr_avg.dropna(subset=["mean"])
     corr_avg = corr_avg.sort_values("mean", ascending=False)
-    bar_fig = px.bar(
-        corr_avg, x="corridor", y="mean", error_y="std",
-        color="mean", color_continuous_scale="RdYlGn",
-        labels={"mean": "Rata-rata UVI", "corridor": "Koridor"},
-        text=corr_avg["mean"].round(2),
-    )
-    bar_fig.update_layout(height=440, coloraxis_showscale=False)
-    st.plotly_chart(bar_fig, use_container_width=True)
+    
+    if not corr_avg.empty:
+        bar_fig = px.bar(
+            corr_avg, x="corridor", y="mean", error_y="std",
+            color="mean", color_continuous_scale="RdYlGn",
+            labels={"mean": "Rata-rata UVI", "corridor": "Koridor"},
+            text=corr_avg["mean"].round(2),
+        )
+        bar_fig.update_layout(height=440, coloraxis_showscale=False)
+        st.plotly_chart(bar_fig, use_container_width=True)
 
-    st.markdown("#### Sisi Jalan (Barat/Timur vs. Utara/Selatan) — Rata-rata UVI")
-    side_avg = df.groupby(["corridor", "side"])["UVI"].mean().reset_index()
-    side_fig = px.bar(side_avg, x="corridor", y="UVI", color="side", barmode="group")
-    side_fig.update_layout(height=400)
-    st.plotly_chart(side_fig, use_container_width=True)
+        st.markdown("#### Sisi Jalan (Barat/Timur vs. Utara/Selatan) — Rata-rata UVI")
+        side_avg = df.groupby(["corridor", "side"])["UVI"].mean().reset_index()
+        side_avg = side_avg.dropna(subset=["UVI"])  # Hapus yang NaN
+        if not side_avg.empty:
+            side_fig = px.bar(side_avg, x="corridor", y="UVI", color="side", barmode="group")
+            side_fig.update_layout(height=400)
+            st.plotly_chart(side_fig, use_container_width=True)
 
-    st.dataframe(
-        corr_avg.rename(columns={"mean": "Rata-rata UVI", "std": "Simpangan Baku", "count": "Jumlah Titik"})
-        .style.format({"Rata-rata UVI": "{:.2f}", "Simpangan Baku": "{:.2f}"}),
-        use_container_width=True, hide_index=True,
-    )
+        st.dataframe(
+            corr_avg.rename(columns={"mean": "Rata-rata UVI", "std": "Simpangan Baku", "count": "Jumlah Titik"})
+            .style.format({"Rata-rata UVI": "{:.2f}", "Simpangan Baku": "{:.2f}"}),
+            use_container_width=True, hide_index=True,
+        )
+    else:
+        st.info("Tidak ada data perbandingan koridor yang valid.")
 
 # ----------------------------------------------------------------------------
 # TAB 5 — TENTANG & METODOLOGI
@@ -1047,7 +1085,7 @@ with tab_data:
     st.markdown("#### Tabel Data Titik (hasil parsing dari Google Sheets)")
     display_cols = ["corridor", "side", "kode", "lat", "lon", "UVI"] + \
                     [c for c in df.columns if c.startswith("uvi::")]
-    st.dataframe(df[display_cols].sort_values("UVI", ascending=False),
+    st.dataframe(df[display_cols].sort_values("UVI", ascending=False, na_position="last"),
                  use_container_width=True, hide_index=True)
 
     csv_bytes = df.to_csv(index=False).encode("utf-8")
