@@ -62,49 +62,76 @@ st.set_page_config(
 # ----------------------------------------------------------------------------
 
 def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+    """Mengkonversi file gambar ke base64 untuk CSS background"""
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except Exception as e:
+        st.warning(f"Gagal membaca file {bin_file}: {e}")
+        return None
 
 def set_sidebar_background(image_path):
-    """Set background untuk sidebar"""
+    """Set background untuk sidebar dengan gambar"""
     if os.path.exists(image_path):
         try:
             img_base64 = get_base64_of_bin_file(image_path)
-            st.markdown(
-                f"""
-                <style>
-                [data-testid="stSidebar"] {{
-                    background-image: url("data:image/jpeg;base64,{img_base64}");
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                }}
-                [data-testid="stSidebar"]::before {{
-                    content: "";
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.6);
-                    z-index: 0;
-                }}
-                [data-testid="stSidebar"] > * {{
-                    position: relative;
-                    z-index: 1;
-                }}
-                [data-testid="stSidebar"] .sidebar-content {{
-                    background-color: transparent !important;
-                }}
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-            return True
+            if img_base64:
+                # Tentukan tipe konten berdasarkan ekstensi file
+                ext = os.path.splitext(image_path)[1].lower()
+                if ext in ['.png']:
+                    mime_type = 'image/png'
+                elif ext in ['.jpg', '.jpeg']:
+                    mime_type = 'image/jpeg'
+                else:
+                    mime_type = 'image/jpeg'
+                
+                st.markdown(
+                    f"""
+                    <style>
+                    [data-testid="stSidebar"] {{
+                        background-image: url("data:{mime_type};base64,{img_base64}") !important;
+                        background-size: cover !important;
+                        background-position: center !important;
+                        background-repeat: no-repeat !important;
+                    }}
+                    [data-testid="stSidebar"]::before {{
+                        content: "";
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0, 0, 0, 0.65);
+                        z-index: 0;
+                    }}
+                    [data-testid="stSidebar"] > * {{
+                        position: relative;
+                        z-index: 1;
+                    }}
+                    [data-testid="stSidebar"] .sidebar-content {{
+                        background-color: transparent !important;
+                    }}
+                    /* Memastikan elemen sidebar lain tidak memiliki background */
+                    [data-testid="stSidebar"] .stMarkdown,
+                    [data-testid="stSidebar"] .stSelectbox,
+                    [data-testid="stSidebar"] .stSlider,
+                    [data-testid="stSidebar"] .stCheckbox,
+                    [data-testid="stSidebar"] .stButton,
+                    [data-testid="stSidebar"] .stWarning,
+                    [data-testid="stSidebar"] .streamlit-expanderHeader {{
+                        background-color: transparent !important;
+                    }}
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                return True
         except Exception as e:
             st.warning(f"Tidak dapat memuat sidebar background: {e}")
             return False
+    else:
+        st.warning(f"File gambar tidak ditemukan: {image_path}")
     return False
 
 def set_header_background(image_path):
@@ -112,39 +139,48 @@ def set_header_background(image_path):
     if os.path.exists(image_path):
         try:
             img_base64 = get_base64_of_bin_file(image_path)
-            st.markdown(
-                f"""
-                <style>
-                .header-with-bg {{
-                    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
-                                      url("data:image/jpeg;base64,{img_base64}");
-                    background-size: cover;
-                    background-position: center;
-                    padding: 2rem 2rem;
-                    border-radius: 14px;
-                    color: white;
-                    margin-bottom: 1rem;
-                    min-height: 150px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                }}
-                .header-with-bg h2 {{
-                    margin: 0;
-                    font-size: 2.2rem;
-                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                }}
-                .header-with-bg p {{
-                    margin: 0.5rem 0 0 0;
-                    opacity: 0.95;
-                    font-size: 1.1rem;
-                    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-                }}
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-            return True
+            if img_base64:
+                ext = os.path.splitext(image_path)[1].lower()
+                if ext in ['.png']:
+                    mime_type = 'image/png'
+                elif ext in ['.jpg', '.jpeg']:
+                    mime_type = 'image/jpeg'
+                else:
+                    mime_type = 'image/jpeg'
+                
+                st.markdown(
+                    f"""
+                    <style>
+                    .header-with-bg {{
+                        background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                                          url("data:{mime_type};base64,{img_base64}") !important;
+                        background-size: cover !important;
+                        background-position: center !important;
+                        padding: 2rem 2rem;
+                        border-radius: 14px;
+                        color: white;
+                        margin-bottom: 1rem;
+                        min-height: 150px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                    }}
+                    .header-with-bg h2 {{
+                        margin: 0;
+                        font-size: 2.2rem;
+                        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                    }}
+                    .header-with-bg p {{
+                        margin: 0.5rem 0 0 0;
+                        opacity: 0.95;
+                        font-size: 1.1rem;
+                        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+                    }}
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                return True
         except Exception as e:
             st.warning(f"Tidak dapat memuat header background: {e}")
             return False
@@ -155,7 +191,26 @@ def set_header_background(image_path):
 # ----------------------------------------------------------------------------
 
 # Set sidebar background dengan Digital twin.png
-set_sidebar_background("images/Digital twin.png")
+# Coba beberapa kemungkinan path
+sidebar_bg_paths = [
+    "images/Digital twin.png",
+    "images/digital twin.png",
+    "images/Digital_twin.png",
+    "images/digital_twin.png",
+    "Digital twin.png",
+    "Digital_twin.png"
+]
+
+sidebar_bg_set = False
+for path in sidebar_bg_paths:
+    if os.path.exists(path):
+        sidebar_bg_set = set_sidebar_background(path)
+        if sidebar_bg_set:
+            st.sidebar.success(f"✅ Background sidebar dimuat: {path}")
+            break
+
+if not sidebar_bg_set:
+    st.sidebar.warning("⚠️ Background sidebar tidak ditemukan. Pastikan file 'Digital twin.png' ada di folder 'images/'")
 
 # Bungkus fungsi murni dari uvip_core.py dengan cache Streamlit di sini, agar
 # uvip_core.py tetap dapat diimpor & diuji tanpa dependensi Streamlit.
@@ -234,18 +289,101 @@ st.markdown(
         text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     }
     [data-testid="stSidebar"] .stWarning {
-        background-color: rgba(255, 255, 0, 0.2) !important;
+        background-color: rgba(255, 255, 0, 0.15) !important;
         color: white !important;
+        border: 1px solid rgba(255, 255, 0, 0.3);
+    }
+    [data-testid="stSidebar"] .stSuccess {
+        background-color: rgba(0, 255, 0, 0.15) !important;
+        color: white !important;
+        border: 1px solid rgba(0, 255, 0, 0.3);
     }
     /* Atur warna slider */
     [data-testid="stSidebar"] .stSlider > div > div > div {
         background-color: rgba(255,255,255,0.3) !important;
     }
+    [data-testid="stSidebar"] .stSlider > div > div > div > div {
+        background-color: #ffffff !important;
+    }
     /* Atur warna expander */
     [data-testid="stSidebar"] .streamlit-expanderHeader {
         color: white !important;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        background-color: rgba(0,0,0,0.3) !important;
+        background-color: rgba(0,0,0,0.25) !important;
+        border-radius: 8px;
+    }
+    [data-testid="stSidebar"] .streamlit-expanderContent {
+        background-color: rgba(0,0,0,0.15) !important;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    /* Atur button */
+    [data-testid="stSidebar"] .stButton button {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    /* Atur selectbox */
+    [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+        background-color: rgba(0, 0, 0, 0.2) !important;
+        border-radius: 6px;
+    }
+    [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+        color: white !important;
+    }
+    /* Atur checkbox */
+    [data-testid="stSidebar"] .stCheckbox label {
+        color: white !important;
+    }
+    /* Mengatur scrollbar sidebar */
+    [data-testid="stSidebar"] ::-webkit-scrollbar {
+        width: 6px;
+    }
+    [data-testid="stSidebar"] ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    [data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+    [data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+    /* Hilangkan background pada main content */
+    .main .block-container {
+        background-color: transparent !important;
+        backdrop-filter: none !important;
+        padding: 1rem 2rem;
+    }
+    /* Buat card metric tetap terbaca */
+    div[data-testid="metric-container"] {
+        background-color: rgba(255, 255, 255, 0.92) !important;
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px solid rgba(200, 200, 200, 0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    /* Atur tab agar tetap rapi */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: rgba(255, 255, 255, 0.85) !important;
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid rgba(200, 200, 200, 0.2);
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        border-radius: 6px;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background-color: #ffffff !important;
+        border: 1px solid #0f2027;
+    }
+    .stTabs [role="tabpanel"] {
+        background-color: rgba(255, 255, 255, 0.0) !important;
+        padding-top: 1rem;
     }
     </style>
     """,
@@ -310,7 +448,19 @@ if not df.empty:
 # ----------------------------------------------------------------------------
 
 # Set header dengan background Digital_twin_Kota.jpg
-header_bg_set = set_header_background("images/Digital_twin_Kota.jpg")
+header_bg_paths = [
+    "images/Digital_twin_Kota.jpg",
+    "images/Digital_twin_Kota.jpeg",
+    "images/Digital twin Kota.jpg",
+    "images/digital_twin_kota.jpg"
+]
+
+header_bg_set = False
+for path in header_bg_paths:
+    if os.path.exists(path):
+        header_bg_set = set_header_background(path)
+        if header_bg_set:
+            break
 
 if header_bg_set:
     st.markdown(
