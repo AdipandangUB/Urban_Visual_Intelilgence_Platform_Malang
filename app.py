@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -28,6 +29,7 @@ Menjalankan aplikasi:
 
 from datetime import datetime
 import os
+import base64
 
 import numpy as np
 import pandas as pd
@@ -54,6 +56,106 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ----------------------------------------------------------------------------
+# 0.1 FUNGSI UNTUK BACKGROUND IMAGE
+# ----------------------------------------------------------------------------
+
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_sidebar_background(image_path):
+    """Set background untuk sidebar"""
+    if os.path.exists(image_path):
+        try:
+            img_base64 = get_base64_of_bin_file(image_path)
+            st.markdown(
+                f"""
+                <style>
+                [data-testid="stSidebar"] {{
+                    background-image: url("data:image/jpeg;base64,{img_base64}");
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                }}
+                [data-testid="stSidebar"]::before {{
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.6);
+                    z-index: 0;
+                }}
+                [data-testid="stSidebar"] > * {{
+                    position: relative;
+                    z-index: 1;
+                }}
+                [data-testid="stSidebar"] .sidebar-content {{
+                    background-color: transparent !important;
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            return True
+        except Exception as e:
+            st.warning(f"Tidak dapat memuat sidebar background: {e}")
+            return False
+    return False
+
+def set_header_background(image_path):
+    """Set background untuk header dengan gambar"""
+    if os.path.exists(image_path):
+        try:
+            img_base64 = get_base64_of_bin_file(image_path)
+            st.markdown(
+                f"""
+                <style>
+                .header-with-bg {{
+                    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                                      url("data:image/jpeg;base64,{img_base64}");
+                    background-size: cover;
+                    background-position: center;
+                    padding: 2rem 2rem;
+                    border-radius: 14px;
+                    color: white;
+                    margin-bottom: 1rem;
+                    min-height: 150px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }}
+                .header-with-bg h2 {{
+                    margin: 0;
+                    font-size: 2.2rem;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                }}
+                .header-with-bg p {{
+                    margin: 0.5rem 0 0 0;
+                    opacity: 0.95;
+                    font-size: 1.1rem;
+                    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            return True
+        except Exception as e:
+            st.warning(f"Tidak dapat memuat header background: {e}")
+            return False
+    return False
+
+# ----------------------------------------------------------------------------
+# 0.2 SET BACKGROUND
+# ----------------------------------------------------------------------------
+
+# Set sidebar background dengan Digital twin.png
+set_sidebar_background("images/Digital twin.png")
 
 # Bungkus fungsi murni dari uvip_core.py dengan cache Streamlit di sini, agar
 # uvip_core.py tetap dapat diimpor & diuji tanpa dependensi Streamlit.
@@ -106,6 +208,49 @@ def make_base_map(center, zoom_start, basemap_name):
 # ----------------------------------------------------------------------------
 # 2. SIDEBAR
 # ----------------------------------------------------------------------------
+
+# CSS tambahan untuk sidebar agar konten terlihat jelas
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] .stMarkdown {
+        color: white !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+    [data-testid="stSidebar"] .stMarkdown h1, 
+    [data-testid="stSidebar"] .stMarkdown h2, 
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: white !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    }
+    [data-testid="stSidebar"] .stCaption {
+        color: #f0f0f0 !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+    [data-testid="stSidebar"] .stSelectbox label,
+    [data-testid="stSidebar"] .stSlider label,
+    [data-testid="stSidebar"] .stCheckbox label {
+        color: white !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+    [data-testid="stSidebar"] .stWarning {
+        background-color: rgba(255, 255, 0, 0.2) !important;
+        color: white !important;
+    }
+    /* Atur warna slider */
+    [data-testid="stSidebar"] .stSlider > div > div > div {
+        background-color: rgba(255,255,255,0.3) !important;
+    }
+    /* Atur warna expander */
+    [data-testid="stSidebar"] .streamlit-expanderHeader {
+        color: white !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        background-color: rgba(0,0,0,0.3) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 st.sidebar.markdown("## 🏙️ UVIP Malang")
 st.sidebar.caption(
@@ -164,21 +309,40 @@ if not df.empty:
 # 3. HEADER
 # ----------------------------------------------------------------------------
 
-st.markdown(
-    """
-    <div style="padding:1.1rem 1.4rem;border-radius:14px;
-                background:linear-gradient(120deg,#0f2027,#203a43,#2c5364);
-                color:white;margin-bottom:1rem;">
-      <h2 style="margin:0;">🏙️ Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan</h2>
-      <p style="margin:0.3rem 0 0 0;opacity:0.9;">
-        Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
-        <i>Urban Visual Index (UVI)</i> dari citra <i>street-level</i>,
-        divalidasi persepsi publik, mendukung SDG 11.
-      </p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# Set header dengan background Digital_twin_Kota.jpg
+header_bg_set = set_header_background("images/Digital_twin_Kota.jpg")
+
+if header_bg_set:
+    st.markdown(
+        """
+        <div class="header-with-bg">
+            <h2>🏙️ Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan</h2>
+            <p>
+                Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
+                <i>Urban Visual Index (UVI)</i> dari citra <i>street-level</i>,
+                divalidasi persepsi publik, mendukung SDG 11.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    # Fallback jika gambar tidak ditemukan
+    st.markdown(
+        """
+        <div style="padding:1.1rem 1.4rem;border-radius:14px;
+                    background:linear-gradient(120deg,#0f2027,#203a43,#2c5364);
+                    color:white;margin-bottom:1rem;">
+          <h2 style="margin:0;">🏙️ Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan</h2>
+          <p style="margin:0.3rem 0 0 0;opacity:0.9;">
+            Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
+            <i>Urban Visual Index (UVI)</i> dari citra <i>street-level</i>,
+            divalidasi persepsi publik, mendukung SDG 11.
+          </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 if df.empty:
     st.error("Tidak ada data untuk ditampilkan. Periksa koneksi atau pilihan koridor di sidebar.")
@@ -446,6 +610,20 @@ with tab_about:
             5. **Visualisasi & simulasi** pada dashboard: peta hotspot, radar indikator,
                simulasi what-if perubahan parameter visual, dan perbandingan antar
                koridor.
+            """
+        )
+    
+    with col2:
+        st.markdown("#### ⚠️ Keterbatasan Prototipe")
+        st.markdown(
+            """
+            - Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
+              demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
+              responden) dan analisis statistik lanjutan.
+            - Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
+              model AI *end-to-end*).
+            - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
+              regenerasi citra.
             """
         )
     
