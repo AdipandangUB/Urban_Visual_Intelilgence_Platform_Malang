@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -68,7 +67,6 @@ def get_base64_of_bin_file(bin_file):
             data = f.read()
         return base64.b64encode(data).decode()
     except Exception as e:
-        st.warning(f"Gagal membaca file {bin_file}: {e}")
         return None
 
 def set_sidebar_background(image_path):
@@ -128,10 +126,7 @@ def set_sidebar_background(image_path):
                 )
                 return True
         except Exception as e:
-            st.warning(f"Tidak dapat memuat sidebar background: {e}")
             return False
-    else:
-        st.warning(f"File gambar tidak ditemukan: {image_path}")
     return False
 
 def set_header_background(image_path):
@@ -182,16 +177,14 @@ def set_header_background(image_path):
                 )
                 return True
         except Exception as e:
-            st.warning(f"Tidak dapat memuat header background: {e}")
             return False
     return False
 
 # ----------------------------------------------------------------------------
-# 0.2 SET BACKGROUND
+# 0.2 SET BACKGROUND (Tanpa Notifikasi)
 # ----------------------------------------------------------------------------
 
 # Set sidebar background dengan Digital twin.png
-# Coba beberapa kemungkinan path
 sidebar_bg_paths = [
     "images/Digital twin.png",
     "images/digital twin.png",
@@ -201,16 +194,25 @@ sidebar_bg_paths = [
     "Digital_twin.png"
 ]
 
-sidebar_bg_set = False
 for path in sidebar_bg_paths:
     if os.path.exists(path):
-        sidebar_bg_set = set_sidebar_background(path)
-        if sidebar_bg_set:
-            st.sidebar.success(f"✅ Background sidebar dimuat: {path}")
-            break
+        set_sidebar_background(path)
+        break
 
-if not sidebar_bg_set:
-    st.sidebar.warning("⚠️ Background sidebar tidak ditemukan. Pastikan file 'Digital twin.png' ada di folder 'images/'")
+# Set header background dengan Digital_twin_Kota.jpg
+header_bg_paths = [
+    "images/Digital_twin_Kota.jpg",
+    "images/Digital_twin_Kota.jpeg",
+    "images/Digital twin Kota.jpg",
+    "images/digital_twin_kota.jpg"
+]
+
+header_bg_set = False
+for path in header_bg_paths:
+    if os.path.exists(path):
+        header_bg_set = set_header_background(path)
+        if header_bg_set:
+            break
 
 # Bungkus fungsi murni dari uvip_core.py dengan cache Streamlit di sini, agar
 # uvip_core.py tetap dapat diimpor & diuji tanpa dependensi Streamlit.
@@ -292,11 +294,6 @@ st.markdown(
         background-color: rgba(255, 255, 0, 0.15) !important;
         color: white !important;
         border: 1px solid rgba(255, 255, 0, 0.3);
-    }
-    [data-testid="stSidebar"] .stSuccess {
-        background-color: rgba(0, 255, 0, 0.15) !important;
-        color: white !important;
-        border: 1px solid rgba(0, 255, 0, 0.3);
     }
     /* Atur warna slider */
     [data-testid="stSidebar"] .stSlider > div > div > div {
@@ -448,20 +445,6 @@ if not df.empty:
 # ----------------------------------------------------------------------------
 
 # Set header dengan background Digital_twin_Kota.jpg
-header_bg_paths = [
-    "images/Digital_twin_Kota.jpg",
-    "images/Digital_twin_Kota.jpeg",
-    "images/Digital twin Kota.jpg",
-    "images/digital_twin_kota.jpg"
-]
-
-header_bg_set = False
-for path in header_bg_paths:
-    if os.path.exists(path):
-        header_bg_set = set_header_background(path)
-        if header_bg_set:
-            break
-
 if header_bg_set:
     st.markdown(
         """
