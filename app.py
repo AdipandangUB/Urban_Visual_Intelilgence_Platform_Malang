@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -75,7 +76,6 @@ def set_sidebar_background(image_path):
         try:
             img_base64 = get_base64_of_bin_file(image_path)
             if img_base64:
-                # Tentukan tipe konten berdasarkan ekstensi file
                 ext = os.path.splitext(image_path)[1].lower()
                 if ext in ['.png']:
                     mime_type = 'image/png'
@@ -108,16 +108,6 @@ def set_sidebar_background(image_path):
                         z-index: 1;
                     }}
                     [data-testid="stSidebar"] .sidebar-content {{
-                        background-color: transparent !important;
-                    }}
-                    /* Memastikan elemen sidebar lain tidak memiliki background */
-                    [data-testid="stSidebar"] .stMarkdown,
-                    [data-testid="stSidebar"] .stSelectbox,
-                    [data-testid="stSidebar"] .stSlider,
-                    [data-testid="stSidebar"] .stCheckbox,
-                    [data-testid="stSidebar"] .stButton,
-                    [data-testid="stSidebar"] .stWarning,
-                    [data-testid="stSidebar"] .streamlit-expanderHeader {{
                         background-color: transparent !important;
                     }}
                     </style>
@@ -266,7 +256,7 @@ def make_base_map(center, zoom_start, basemap_name):
 # 2. SIDEBAR
 # ----------------------------------------------------------------------------
 
-# CSS tambahan untuk sidebar agar konten terlihat jelas
+# CSS tambahan untuk sidebar agar konten terlihat jelas dan expander memiliki background putih
 st.markdown(
     """
     <style>
@@ -302,19 +292,51 @@ st.markdown(
     [data-testid="stSidebar"] .stSlider > div > div > div > div {
         background-color: #ffffff !important;
     }
-    /* Atur warna expander */
+    /* Atur warna expander dengan background putih */
     [data-testid="stSidebar"] .streamlit-expanderHeader {
-        color: white !important;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        background-color: rgba(0,0,0,0.25) !important;
+        color: #1a1a1a !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
         border-radius: 8px;
+        border: 1px solid rgba(200, 200, 200, 0.5);
+        padding: 10px 15px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    [data-testid="stSidebar"] .streamlit-expanderHeader:hover {
+        background-color: rgba(255, 255, 255, 1) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    [data-testid="stSidebar"] .streamlit-expanderHeader svg {
+        color: #1a1a1a !important;
     }
     [data-testid="stSidebar"] .streamlit-expanderContent {
-        background-color: rgba(0,0,0,0.15) !important;
-        border-radius: 8px;
-        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border-radius: 0 0 8px 8px;
+        padding: 15px 15px 20px 15px !important;
+        border-left: 1px solid rgba(200, 200, 200, 0.3);
+        border-right: 1px solid rgba(200, 200, 200, 0.3);
+        border-bottom: 1px solid rgba(200, 200, 200, 0.3);
+        margin-bottom: 5px;
     }
-    /* Atur button */
+    /* Atur teks di dalam expander agar gelap */
+    [data-testid="stSidebar"] .streamlit-expanderContent .stMarkdown,
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider label,
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider p {
+        color: #1a1a1a !important;
+        text-shadow: none !important;
+    }
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider .stMarkdown {
+        color: #1a1a1a !important;
+        text-shadow: none !important;
+    }
+    /* Atur nilai slider di dalam expander */
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div {
+        background-color: rgba(0,0,0,0.15) !important;
+    }
+    [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div > div {
+        background-color: #0f2027 !important;
+    }
+    /* Atur button di dalam sidebar */
     [data-testid="stSidebar"] .stButton button {
         background-color: rgba(255, 255, 255, 0.15) !important;
         color: white !important;
@@ -421,7 +443,7 @@ st.sidebar.markdown("### ⚙️ Bobot Indikator UVI")
 st.sidebar.caption("Geser untuk mensimulasikan skenario preferensi publik / kebijakan penataan.")
 
 weights = {}
-with st.sidebar.expander("Atur bobot 8 indikator visual", expanded=False):
+with st.sidebar.expander("📊 Atur bobot 8 indikator visual", expanded=False):
     for ind in INDICATORS:
         weights[ind] = st.slider(ind, 0.0, 2.0, 1.0, 0.1, key=f"w_{ind}")
 
