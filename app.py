@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 UVIP Malang — Urban Visual Intelligence Platform
 =================================================
@@ -450,41 +449,27 @@ with tab_about:
             """
         )
     
-    with col2:
-        st.markdown("#### ⚠️ Keterbatasan Prototipe")
-        st.markdown(
-            """
-            - Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
-              demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
-              responden) dan analisis statistik lanjutan.
-            - Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
-              model AI *end-to-end*).
-            - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
-              regenerasi citra.
-            """
-        )
-    
     st.markdown("---")
-    st.markdown("#### 👨‍🔬 Tim Peneliti UVIP Malang")
+    st.markdown("#### 👨‍🔬 Tim Peneliti UVIP Malang - UNIVERSITAS BRAWIJAYA")
     
     # Data tim peneliti
     researchers = [
         {
             "name": "Dr. Herry Santosa",
             "image": "images/herry santosa.jpeg",
-            "expertise": "Ahli 3D Building Digital | Digital Management Asset",
+            "expertise": "Ahli *3D Building Digital* | *Digital Management Asset*",
             "role": "Ketua Tim Peneliti"
         },
         {
             "name": "Dr. Adipandang Yudono",
             "image": "images/Adipandang Yudono.jpeg",
-            "expertise": "Ahli Spatial Data Science | GIS Programmer | Smart Cities | Urban Digital Twin ",
+            "expertise": "Ahli *Spatial Data Science* | *GIS Programmer* | *Smart Cities* | *GeoAI* ",
             "role": "Anggota Tim Peneliti"
         },
         {
             "name": "Dr. Herman Tolle",
             "image": "images/herman tolle.png",
-            "expertise": "Ahli Teknologi Informasi | Sistem Cerdas | Human-Computer Interaction",
+            "expertise": "Ahli Teknologi Informasi | Sistem Cerdas | *Human-Computer Interaction*",
             "role": "Anggota Tim Peneliti"
         },
         {
@@ -496,7 +481,7 @@ with tab_about:
         {
             "name": "Dr. Agung Setia Budi",
             "image": "images/Agung Setia Budi.jpg",
-            "expertise": "Ahli Kecerdasan Buatan | Computer Vision | Data Science",
+            "expertise": "Ahli Kecerdasan Buatan | *Computer Vision* | *Data Science*",
             "role": "Anggota Tim Peneliti"
         }
     ]
@@ -543,7 +528,7 @@ with tab_about:
             st.caption(f"📌 {researcher['expertise']}")
     
     st.markdown("---")
-    st.caption("📚 Universitas Brawijaya - Fakultas Teknik | Program Studi Perencanaan Wilayah dan Kota")
+    st.caption("📚 Universitas Brawijaya")
 
 # ----------------------------------------------------------------------------
 # TAB 6 — DATA & UNDUH
