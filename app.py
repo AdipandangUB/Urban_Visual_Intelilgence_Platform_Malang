@@ -946,20 +946,6 @@ with tab_about:
             """
         )
     
-    with col2:
-        st.markdown("#### ⚠️ Keterbatasan Prototipe")
-        st.markdown(
-            """
-            - Bobot UVI pada prototipe ini bersifat *user-adjustable* untuk kebutuhan
-              demonstrasi; kalibrasi final memerlukan survei persepsi publik (≥200
-              responden) dan analisis statistik lanjutan.
-            - Data ditarik langsung dari Google Sheets hasil kerja tim (bukan pipeline
-              model AI *end-to-end*).
-            - Simulasi skenario pada Tab 3 bekerja pada level indeks, bukan pada level
-              regenerasi citra.
-            """
-        )
-    
     st.markdown("---")
     st.markdown("#### 👨‍🔬 Tim Peneliti UVIP Malang - UNIVERSITAS BRAWIJAYA")
     
