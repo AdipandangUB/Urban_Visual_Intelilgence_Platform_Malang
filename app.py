@@ -707,6 +707,26 @@ with tab_map:
     with right:
         st.markdown("#### Legenda")
         st.caption("🔴 UVI tinggi (visual berkualitas) → 🔵 UVI rendah")
+        with st.expander("ℹ️ Apa arti UVI tinggi/rendah?"):
+            st.markdown(
+                """
+                **🔴 UVI tinggi** — ruang terbuka dengan kualitas visual yang lebih baik:
+                bangunan tertata & mudah dilihat *(Building Visibility)*, vegetasi cukup rimbun
+                *(Vegetation Coverage)*, langit cukup terbuka *(Sky Openness)*, area pejalan
+                mudah diakses *(Ground Accessibility)*, aktivitas manusia hidup namun tidak
+                sesak *(Human Activity)*, kendaraan tidak mendominasi *(Vehicle Intensity)*,
+                infrastruktur lalu lintas tertata rapi *(Traffic Infrastructure)*, dan unsur
+                bangunan/heritage cukup menonjol *(Heritage Dominance)*.
+
+                **🔵 UVI rendah** — sebaliknya: pandangan visual cenderung terganggu, misalnya
+                minim vegetasi/naungan, langit tertutup bangunan padat, area pejalan sulit
+                diakses, kepadatan kendaraan tinggi, atau elemen visual kurang tertata.
+
+                Skor UVI merupakan agregasi dari **8 indikator visual komposit** di atas
+                (bobot dapat diubah pada panel *Bobot Indikator UVI* untuk mensimulasikan
+                skenario preferensi publik/kebijakan penataan).
+                """
+            )
         basemap_name = st.selectbox("Basemap", list(BASEMAPS.keys()),
                                      index=list(BASEMAPS.keys()).index(DEFAULT_BASEMAP))
         show_nodes = st.checkbox("Tampilkan node fotogenik + skor UVI", value=True)
