@@ -652,8 +652,9 @@ if header_bg_set:
     st.markdown(
         """
         <div class="header-with-bg">
-            <h2>🏙️ Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan</h2>
+            <h2>🏙️ UVIP - *Urban Visual Intelligence Platform* Malang</h2>
             <p>
+                Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
                 Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
                 <i>Urban Visual Index (UVI)</i> dari citra <i>street-level</i>,
                 divalidasi persepsi publik, mendukung SDG 11.
