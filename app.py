@@ -527,9 +527,6 @@ with tab_about:
             st.caption(f"*{researcher['role']}*")
             st.caption(f"📌 {researcher['expertise']}")
     
-    st.markdown("---")
-    st.caption("📚 Universitas Brawijaya")
-
 # ----------------------------------------------------------------------------
 # TAB 6 — DATA & UNDUH
 # ----------------------------------------------------------------------------
