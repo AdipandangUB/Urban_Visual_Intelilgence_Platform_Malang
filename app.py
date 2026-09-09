@@ -152,7 +152,7 @@ if st.sidebar.button("↺ Reset bobot ke default"):
 st.sidebar.markdown("---")
 st.sidebar.caption(
     "Sumber data: hasil deteksi AI (computer vision) atas citra *street-level* "
-    "koridor Kota Malang, diproses tim Peneliti UVIP (Urban Visual Intelligence Platform) Malang - Universitas Brawijaya. "
+    "koridor Kota Malang, diproses tim Peneliti UVIP (*Urban Visual Intelligence Platform*) Malang - Universitas Brawijaya. "
 )
 
 df = data_all[data_all["corridor"].isin(selected_corridors)].copy() if not data_all.empty else data_all
