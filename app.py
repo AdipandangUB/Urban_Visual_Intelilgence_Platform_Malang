@@ -472,13 +472,13 @@ with tab_about:
         {
             "name": "Dr. Herry Santosa",
             "image": "images/herry santosa.jpeg",
-            "expertise": "Ahli Perencanaan Wilayah dan Kota | Urban Design | Smart City",
+            "expertise": "Ahli 3D Building Digital | Digital Management Asset",
             "role": "Ketua Tim Peneliti"
         },
         {
             "name": "Dr. Adipandang Yudono",
             "image": "images/Adipandang Yudono.jpeg",
-            "expertise": "Ahli Sistem Informasi Geografis | Remote Sensing | Analisis Spasial",
+            "expertise": "Ahli Spatial Data Science | GIS Programmer | Smart Cities | Urban Digital Twin ",
             "role": "Anggota Tim Peneliti"
         },
         {
