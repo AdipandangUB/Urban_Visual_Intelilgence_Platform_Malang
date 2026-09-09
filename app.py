@@ -753,8 +753,8 @@ with tab_map:
 
             st_folium(fmap, height=560, width=None)
     st.caption(
-        "Peta ini mensimulasikan luaran 'HASIL & LUARAN: PETA HOTSPOT PVI' pada "
-        "proposal — heatmap kualitas visual dengan node fotogenik yang menampilkan "
+        "Peta ini mensimulasikan luaran 'HASIL & LUARAN: PETA HOTSPOT PVI'"
+        "— heatmap kualitas visual dengan node fotogenik yang menampilkan "
         "skor indeks pada setiap titik survei."
     )
 
