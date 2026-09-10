@@ -7,3 +7,4 @@ folium>=0.16
 streamlit-folium>=0.22
 pillow>=10.0
 openpyxl
+reportlab
