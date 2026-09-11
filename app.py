@@ -9,19 +9,6 @@ Dikembangkan mengacu pada proposal Penelitian Terapan:
 Berbasis AI untuk Smart City Kota Malang" dengan Peneliti Dr. Herry Santosa,Dr Adipandang Yudono,Dr Herman Tolle,Prof. Jenny Ernawati,
 Dr. Agung Setia Budi - Universitas Brawijaya.
 
-Konteks kunci yang diadaptasi ke dalam aplikasi ini:
-- Urban Visual Index (UVI)      -> indeks komposit kualitas visual per titik/segmen
-- Street View Imagery           -> data citra jalan (Google Street View / survei 360)
-- Artificial Intelligence       -> hasil deteksi elemen visual (semantic segmentation)
-- Ruang Terbuka Kota            -> unit analisis = koridor jalan / ruang terbuka
-- Smart City                    -> dashboard WebGIS untuk pemantauan & simulasi kebijakan
-
-Sumber data (Google Sheets hasil analisis AI computer-vision atas citra
-street-level, disusun tim ):
-  gid=1062597004, 446487299, 891123454, 1869212551, 385636298
-(lihat CORRIDOR_SHEETS di bawah — silakan sesuaikan nama koridor jika urutan
-tab pada spreadsheet Anda berbeda).
-
 Menjalankan aplikasi:
     streamlit run app.py
 """
@@ -43,25 +30,6 @@ from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 from PIL import Image
 
-# requests + openpyxl digunakan untuk mengambil FOTO NODE yang di-insert
-# langsung ke sel Google Sheets ("Insert > Image > in cell"). Foto semacam
-# ini TIDAK bisa dibaca dari ekspor CSV (CSV tidak menyimpan gambar sama
-# sekali) — satu-satunya cara publik untuk mendapatkannya kembali adalah
-# lewat ekspor .xlsx, di mana gambar ikut tersimpan sebagai media asli.
-# Import dibuat defensif agar aplikasi tetap berjalan tanpa foto (fallback
-# ke link "buka sumber foto") apabila salah satu paket belum terpasang.
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
-
-try:
-    import openpyxl
-    OPENPYXL_AVAILABLE = True
-except ImportError:
-    OPENPYXL_AVAILABLE = False
-
 # ReportLab digunakan untuk menghasilkan policy brief PDF secara langsung dari
 # hasil analisis UVI. Import dibuat defensif agar aplikasi tetap dapat berjalan
 # dan menampilkan pesan yang jelas apabila paket belum tersedia di server.
@@ -81,8 +49,7 @@ except ImportError:
 
 # python-docx digunakan untuk menghasilkan versi editable Policy Brief dalam
 # format Word (.docx). Import dibuat defensif dengan pola yang sama seperti
-# ReportLab di atas, agar aplikasi tetap berjalan meskipun paket belum
-# terpasang di server.
+# ReportLab di atas.
 try:
     from docx import Document
     from docx.shared import Pt, Cm, RGBColor
@@ -98,13 +65,7 @@ from uvip_core import (
     sheet_csv_url, load_corridor, demo_corridor, compute_uvi,
 )
 
-# Fungsi-fungsi di bawah ini diimpor secara DEFENSIF: kalau uvip_core.py yang
-# ter-deploy di server masih versi lama (belum berisi fungsi ini — biasanya
-# karena file itu belum ikut di-push/redeploy bersamaan dengan app.py), app
-# TIDAK boleh crash dengan ImportError. Sebagai gantinya dipakai salinan
-# cadangan / stub aman di bawah ini, dan fitur terkait otomatis dinonaktifkan
-# dengan pesan yang jelas (bukan layar merah error).
-
+# Fungsi-fungsi di bawah ini diimpor secara DEFENSIF.
 try:
     from uvip_core import build_upload_template, parse_uploaded_corridor
     UPLOAD_FEATURE_AVAILABLE = True
@@ -126,8 +87,6 @@ except ImportError:
 # -----------------------------------------------------------------------------
 # Popup node + sumber foto dari Google Sheets
 # -----------------------------------------------------------------------------
-# build_node_popup_html dibuat lokal agar fitur foto tetap bekerja meskipun
-# uvip_core.py di server masih menggunakan versi popup lama.
 
 PHOTO_SOURCES = {
     "385636298": {
@@ -152,149 +111,51 @@ PHOTO_SOURCES = {
     },
 }
 
-# ID spreadsheet sumber (sama untuk seluruh koridor; hanya gid/tab yang
-# berbeda) dan nama tab per gid — dipakai untuk mengambil foto yang
-# di-insert langsung ke sel ("Insert > Image > in cell"), yang HANYA bisa
-# diambil lewat ekspor .xlsx (CSV tidak menyimpan gambar in-cell sama
-# sekali). Nama tab harus persis sama dengan nama tab di Google Sheets.
-UVIP_SPREADSHEET_ID = "1XrgdsW7IVULMQ3LIiEocPAbuFUGBkAnaPBYO0N2gxMA"
-GID_TO_SHEET_TAB = {
-    "385636298": "ALUN-ALUN MERDEKA",
-    "1869212551": "KAYUTANGAN 1",
-    "891123454": "LAFAYETTE-PLN",
-    "446487299": "KAYUTANGAN-TUGU",
-    "1062597004": "TUGU",
-}
-
-
-@st.cache_data(show_spinner=False, ttl=6 * 3600)
-def _download_uvip_workbook_bytes():
-    """Unduh seluruh workbook Google Sheets sebagai .xlsx (di-cache 6 jam).
-
-    Dilakukan sekali untuk seluruh koridor karena semua tab berada di satu
-    spreadsheet yang sama. Foto yang di-insert langsung ke sel HANYA ikut
-    terbawa pada ekspor .xlsx — ekspor CSV tidak bisa menyimpan gambar sama
-    sekali, itulah sebabnya foto sebelumnya tidak pernah muncul di popup.
-    """
-    if not (REQUESTS_AVAILABLE and OPENPYXL_AVAILABLE):
-        return None
-    url = f"https://docs.google.com/spreadsheets/d/{UVIP_SPREADSHEET_ID}/export?format=xlsx"
-    try:
-        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=60)
-        resp.raise_for_status()
-        content_type = resp.headers.get("Content-Type", "")
-        if "spreadsheet" not in content_type and "officedocument" not in content_type:
-            return None
-        return resp.content
-    except Exception:
-        return None
-
-
-def _guess_image_mime(img_obj):
-    fmt = getattr(img_obj, "format", None)
-    if fmt:
-        fmt = str(fmt).lower()
-        if fmt in ("jpeg", "jpg"):
-            return "image/jpeg"
-        if fmt in ("png", "gif", "bmp", "webp"):
-            return f"image/{fmt}"
-    return "image/jpeg"
-
-
-@st.cache_data(show_spinner=False, ttl=6 * 3600)
-def _extract_embedded_node_photos(gid: str):
-    """Ekstrak foto in-cell dari tab sesuai gid, dikembalikan sebagai dict
-    {kode_node: data_uri_base64} agar bisa langsung dipakai sebagai <img src>
-    tanpa bergantung pada URL publik eksternal.
-
-    Pola sheet: kode node berada tepat 1 kolom di sebelah kiri kolom foto,
-    pada baris yang sama (mis. kolom A=kode, B=foto; N=kode, O=foto).
-    """
-    if not (REQUESTS_AVAILABLE and OPENPYXL_AVAILABLE):
-        return {}
-    wb_bytes = _download_uvip_workbook_bytes()
-    if not wb_bytes:
-        return {}
-
-    tab_name = GID_TO_SHEET_TAB.get(str(gid))
-    if not tab_name:
-        return {}
-
-    try:
-        wb = openpyxl.load_workbook(io.BytesIO(wb_bytes), data_only=True)
-    except Exception:
-        return {}
-
-    sheet_name = tab_name if tab_name in wb.sheetnames else next(
-        (s for s in wb.sheetnames if s.strip().lower() == tab_name.strip().lower()),
-        None,
-    )
-    if not sheet_name:
-        return {}
-    ws = wb[sheet_name]
-
-    result = {}
-    for img_obj in getattr(ws, "_images", []):
-        anchor = getattr(img_obj, "anchor", None)
-        _from = getattr(anchor, "_from", None) if anchor is not None else None
-        if _from is None:
-            continue
-        r, c = _from.row, _from.col
-
-        kode = None
-        for col in (c - 1, c - 2):
-            if col < 0:
-                continue
-            val = ws.cell(row=r + 1, column=col + 1).value
-            if val is not None and str(val).strip():
-                kode = str(val).strip()
-                break
-        if not kode:
-            continue
-
-        try:
-            raw = img_obj.ref.getvalue() if hasattr(img_obj.ref, "getvalue") else img_obj._data()
-            mime = _guess_image_mime(img_obj)
-            b64 = base64.b64encode(raw).decode("ascii")
-            result[kode] = f"data:{mime};base64,{b64}"
-        except Exception:
-            continue
-    return result
-
 
 def _extract_first_url(value):
     """Ambil URL pertama dari URL biasa, HYPERLINK(), IMAGE(), HTML, atau Markdown.
 
-    Data URI base64 (mis. hasil ekstraksi foto in-cell) dikembalikan apa
-    adanya karena bukan URL http(s) biasa.
+    Google Sheets kadang menyimpan foto sebagai:
+      - URL polos:            https://drive.google.com/file/d/xxxx/view
+      - Formula HYPERLINK:    =HYPERLINK("https://...","Label")
+      - Formula IMAGE:        =IMAGE("https://...")
+      - Tag HTML:             <a href="https://...">...</a>  atau <img src="https://...">
+      - Markdown:             [Label](https://...)
+    Fungsi ini mengekstrak URL pertama yang ditemukan dengan regex.
     """
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return ""
     text = str(value).strip()
-    if not text or text.lower() in {"nan", "none", "null"}:
+    if not text or text.lower() in {"nan", "none", "null", "-"}:
         return ""
 
-    if text.startswith("data:"):
-        return text
-
-    # URL di dalam formula Google Sheets, HTML, atau Markdown.
-    m = re.search(r'https?://[^\"\'\s<>]+', text)
+    # Regex ini menangkap URL http(s) di dalam tanda kutip, tanda kurung,
+    # tag HTML, atau teks polos. Dipakai untuk semua format di atas.
+    m = re.search(r'https?://[^\s"\'<>\)\]]+', text)
     if not m:
         return ""
     return m.group(0).rstrip('),;')
 
 
 def _drive_image_url(url):
-    """Ubah beberapa bentuk URL Google Drive menjadi URL gambar langsung."""
+    """Ubah beberapa bentuk URL Google Drive menjadi URL gambar langsung.
+
+    Endpoint `https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000`
+    jauh lebih andal untuk hotlink di dalam tag <img> dibandingkan
+    `uc?export=view` (yang sering di-redirect/blank oleh Google).
+    """
     if not url:
         return ""
     url = str(url).strip()
-    if url.startswith("data:"):
-        return url
-    m = re.search(r'(?:/d/|id=)([A-Za-z0-9_-]{20,})', url)
+
+    # Ekstrak FILE_ID dari berbagai bentuk URL Google Drive / Docs.
+    m = re.search(r'(?:/d/|/file/d/|id=)([A-Za-z0-9_-]{20,})', url)
     if m and ('drive.google.com' in url or 'docs.google.com' in url):
         file_id = m.group(1)
-        return f'https://drive.usercontent.google.com/download?id={file_id}&export=view'
+        return f'https://drive.google.com/thumbnail?id={file_id}&sz=w1000'
+
+    # Jika URL adalah Google Sheets (bukan file gambar), kembalikan apa adanya
+    # agar bisa dipakai sebagai link sumber, bukan gambar.
     return url
 
 
@@ -305,22 +166,29 @@ def _find_photo_column(columns):
         s = re.sub(r'[^a-z0-9]', '', str(col).lower())
         if any(k in s for k in (
             'foto', 'photo', 'image', 'gambar', 'streetview', 'streetphoto',
-            'photourl', 'imageurl', 'urlfoto', 'urlphoto', 'urlgambar'
+            'photourl', 'imageurl', 'urlfoto', 'urlphoto', 'urlgambar',
+            'linkfoto', 'linkphoto', 'linkgambar', 'picture', 'img'
         )):
             preferred.append(col)
     # Prioritaskan nama yang paling jelas.
     preferred.sort(key=lambda c: (
         0 if re.sub(r'[^a-z0-9]', '', str(c).lower()) in
-        {'foto', 'photo', 'image', 'gambar', 'photourl', 'imageurl'} else 1,
+        {'foto', 'photo', 'image', 'gambar', 'photourl', 'imageurl',
+         'linkfoto', 'linkphoto'} else 1,
         str(c).lower()
     ))
     return preferred
 
 
 def _find_key_column(columns):
+    """Cari kolom kunci yang bisa dipakai untuk mencocokkan baris foto ke baris data.
+
+    Prioritas: kolom yang mengandung 'kode', 'node', 'id', 'nomor', 'no'.
+    """
     candidates = {
-        'kode', 'code', 'id', 'node', 'nodid', 'nodeid', 'nomor',
-        'no', 'nourut', 'nomorurut', 'urutan', 'pointid', 'point'
+        'kode', 'code', 'id', 'node', 'nodeid', 'nodid', 'nomor',
+        'no', 'nourut', 'nomorurut', 'urutan', 'pointid', 'point',
+        'kodeunik', 'kodetitik', 'nodecode', 'node_id', 'titik', 'titikid'
     }
     for col in columns:
         norm = re.sub(r'[^a-z0-9]', '', str(col).lower())
@@ -329,14 +197,20 @@ def _find_key_column(columns):
     return None
 
 
+def _normalize_key(v):
+    """Normalisasi nilai kunci agar pencocokan lebih toleran."""
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return ""
+    return re.sub(r'\s+', '', str(v).strip().upper())
+
+
 def _attach_photo_urls(data, gid):
     """Tambahkan kolom foto dari tab Google Sheets sesuai gid.
 
-    Sumber utama: foto yang di-insert langsung ke sel ("Insert > Image > in
-    cell") diambil dari ekspor .xlsx dan disimpan sebagai data URI base64,
-    sehingga bisa langsung dirender sebagai <img> di popup tanpa bergantung
-    pada URL publik eksternal. Pencocokan kolom teks URL pada CSV tetap
-    dipertahankan sebagai fallback untuk struktur sheet yang berbeda.
+    Strategi pencocokan (berurutan):
+      1. Nama kolom kode/node yang sama persis antara data & raw sheet.
+      2. Nama kolom kode/node yang dinormalisasi (uppercase, strip spasi).
+      3. Fallback: koordinat lat/lon yang dibulatkan 6 desimal.
     """
     if data is None or data.empty:
         return data
@@ -347,50 +221,69 @@ def _attach_photo_urls(data, gid):
     if 'foto_source' not in out.columns:
         out['foto_source'] = PHOTO_SOURCES.get(str(gid), {}).get('url', '')
 
-    # 0) Sumber utama: foto in-cell, dicocokkan lewat kolom kode node.
-    embedded = _extract_embedded_node_photos(str(gid))
-    if embedded:
-        key_col = 'kode' if 'kode' in out.columns else _find_key_column(out.columns)
-        if key_col is not None:
-            out['foto'] = out.apply(
-                lambda r: str(r.get('foto', '')).strip() or embedded.get(
-                    str(r.get(key_col, '')).strip(), ''
-                ), axis=1
-            )
-
     try:
         raw = pd.read_csv(_sheet_csv_url(str(gid)))
     except Exception:
         return out
+
+    # Bersihkan nama kolom dari spasi
+    raw.columns = [str(c).strip() for c in raw.columns]
+    out.columns = [str(c).strip() for c in out.columns]
 
     photo_cols = _find_photo_column(raw.columns)
     if not photo_cols:
         return out
 
     photo_col = photo_cols[0]
+
+    # Ekstrak URL dari setiap sel foto dan konversi ke URL gambar langsung
     raw['_photo_url'] = raw[photo_col].map(_extract_first_url).map(_drive_image_url)
 
-    # 1) Pencocokan paling aman: kode/node ID.
+    # --- Strategi 1 & 2: pencocokan berdasarkan kode/node ID ---
     out_key = _find_key_column(out.columns)
     raw_key = _find_key_column(raw.columns)
+
     if out_key is not None and raw_key is not None:
+        # Bangun lookup: {normalized_key: url}
         lookup = {}
         for _, rr in raw.iterrows():
-            key = str(rr.get(raw_key, '')).strip()
+            key_raw = rr.get(raw_key, '')
             url = str(rr.get('_photo_url', '')).strip()
-            if key and url:
-                lookup[key] = url
-        if lookup:
-            out['foto'] = out.apply(
-                lambda r: str(r.get('foto', '')).strip() or lookup.get(
-                    str(r.get(out_key, '')).strip(), ''
-                ), axis=1
-            )
+            if url:
+                k_norm = _normalize_key(key_raw)
+                if k_norm:
+                    lookup[k_norm] = url
+                # Simpan juga versi mentah (tanpa normalisasi) untuk cadangan
+                k_raw = str(key_raw).strip()
+                if k_raw and k_raw != k_norm:
+                    lookup.setdefault(k_raw, url)
 
-    # 2) Pencocokan fallback berdasarkan koordinat.
+        if lookup:
+            def match_by_key(r):
+                current = str(r.get('foto', '')).strip()
+                if current and current.lower() not in {'nan', 'none', 'null'}:
+                    return current
+                # Coba normalisasi
+                val = r.get(out_key, '')
+                url = lookup.get(_normalize_key(val), '')
+                if not url:
+                    url = lookup.get(str(val).strip(), '')
+                return url
+
+            out['foto'] = out.apply(match_by_key, axis=1)
+
+    # --- Strategi 3: fallback berdasarkan koordinat ---
     if {'lat', 'lon'}.issubset(out.columns):
-        raw_lat_col = next((c for c in raw.columns if str(c).strip().lower() in {'lat', 'latitude', 'y'}), None)
-        raw_lon_col = next((c for c in raw.columns if str(c).strip().lower() in {'lon', 'lng', 'longitude', 'x'}), None)
+        raw_lat_col = next(
+            (c for c in raw.columns
+             if str(c).strip().lower() in {'lat', 'latitude', 'y', 'lintang'}),
+            None
+        )
+        raw_lon_col = next(
+            (c for c in raw.columns
+             if str(c).strip().lower() in {'lon', 'lng', 'longitude', 'x', 'bujur'}),
+            None
+        )
         if raw_lat_col and raw_lon_col:
             coord_lookup = {}
             for _, rr in raw.iterrows():
@@ -405,7 +298,7 @@ def _attach_photo_urls(data, gid):
             if coord_lookup:
                 def by_coord(r):
                     current = str(r.get('foto', '')).strip()
-                    if current:
+                    if current and current.lower() not in {'nan', 'none', 'null'}:
                         return current
                     try:
                         key = (round(float(r['lat']), 6), round(float(r['lon']), 6))
@@ -425,6 +318,7 @@ def _source_url_for_row(row):
 
 
 def build_node_popup_html(row, header_color: str) -> str:
+    """Bangun HTML popup untuk node peta, termasuk foto jika tersedia."""
     kode = html.escape(str(row.get('kode', '')))
     corridor = html.escape(str(row.get('corridor', '')))
     side = html.escape(str(row.get('side', '')))
@@ -433,13 +327,17 @@ def build_node_popup_html(row, header_color: str) -> str:
 
     foto = _drive_image_url(_extract_first_url(row.get('foto', '')))
     source_url = _source_url_for_row(row)
+
     if foto:
+        # referrerpolicy="no-referrer" WAJIB agar Google Drive mengizinkan
+        # hotlink gambar dari domain Streamlit.
         img_html = (
             f'<a href="{html.escape(foto)}" target="_blank" rel="noopener noreferrer">'
             f'<img src="{html.escape(foto)}" alt="Foto {kode}" '
-            'style="width:100%;max-height:185px;object-fit:cover;'
+            'referrerpolicy="no-referrer" '
+            'style="width:100%;max-height:200px;object-fit:cover;'
             'border-radius:8px;margin:8px 0 4px 0;display:block;" '
-            'onerror="this.style.display=\'none\'">'
+            'onerror="this.onerror=null;this.src=\'https://via.placeholder.com/280x160/e0e0e0/666666?text=Foto+tidak+dapat+dimuat\';" />'
             '</a>'
         )
         if source_url:
@@ -523,6 +421,7 @@ def build_node_popup_html(row, header_color: str) -> str:
     </div>
     """
 
+
 # ----------------------------------------------------------------------------
 # 0. KONFIGURASI DASAR
 # ----------------------------------------------------------------------------
@@ -534,6 +433,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
 # ----------------------------------------------------------------------------
 # 0.1 FUNGSI UNTUK BACKGROUND IMAGE
 # ----------------------------------------------------------------------------
@@ -544,8 +444,9 @@ def get_base64_of_bin_file(bin_file):
         with open(bin_file, 'rb') as f:
             data = f.read()
         return base64.b64encode(data).decode()
-    except Exception as e:
+    except Exception:
         return None
+
 
 def set_sidebar_background(image_path):
     """Set background untuk sidebar dengan gambar"""
@@ -560,7 +461,7 @@ def set_sidebar_background(image_path):
                     mime_type = 'image/jpeg'
                 else:
                     mime_type = 'image/jpeg'
-                
+
                 st.markdown(
                     f"""
                     <style>
@@ -592,9 +493,10 @@ def set_sidebar_background(image_path):
                     unsafe_allow_html=True
                 )
                 return True
-        except Exception as e:
+        except Exception:
             return False
     return False
+
 
 def set_header_background(image_path):
     """Set background untuk header dengan gambar"""
@@ -609,7 +511,7 @@ def set_header_background(image_path):
                     mime_type = 'image/jpeg'
                 else:
                     mime_type = 'image/jpeg'
-                
+
                 st.markdown(
                     f"""
                     <style>
@@ -643,15 +545,15 @@ def set_header_background(image_path):
                     unsafe_allow_html=True
                 )
                 return True
-        except Exception as e:
+        except Exception:
             return False
     return False
 
+
 # ----------------------------------------------------------------------------
-# 0.2 SET BACKGROUND (Tanpa Notifikasi)
+# 0.2 SET BACKGROUND
 # ----------------------------------------------------------------------------
 
-# Set sidebar background dengan Digital twin.png
 sidebar_bg_paths = [
     "images/Digital twin.png",
     "images/digital twin.png",
@@ -666,7 +568,6 @@ for path in sidebar_bg_paths:
         set_sidebar_background(path)
         break
 
-# Set header background dengan Digital_twin_Kota.jpg
 header_bg_paths = [
     "images/Digital_twin_Kota.jpg",
     "images/Digital_twin_Kota.jpeg",
@@ -681,9 +582,12 @@ for path in header_bg_paths:
         if header_bg_set:
             break
 
-# Bungkus fungsi murni dari uvip_core.py dengan cache Streamlit di sini, agar
-# uvip_core.py tetap dapat diimpor & diuji tanpa dependensi Streamlit.
+# Bungkus fungsi murni dari uvip_core.py dengan cache Streamlit.
 _load_corridor_cached = st.cache_data(ttl=3600, show_spinner=False)(load_corridor)
+
+
+def _sheet_csv_url(gid: str) -> str:
+    return sheet_csv_url(gid)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -698,8 +602,7 @@ def load_all_corridors():
             d = demo_corridor(name)
             used_demo.append(name)
         else:
-            # Ambil foto dari tab Google Sheets yang sama, tanpa mengubah
-            # struktur data hasil analisis AI.
+            # Ambil foto dari tab Google Sheets yang sama.
             d = _attach_photo_urls(d, gid)
 
         # Pastikan setiap baris membawa sumber foto koridornya.
@@ -715,11 +618,7 @@ def load_all_corridors():
     return all_df, used_demo
 
 
-def _sheet_csv_url(gid: str) -> str:
-    return sheet_csv_url(gid)
-
-
-# Basemap 
+# Basemap
 BASEMAPS = {
     "OpenStreetMap Standar": {
         "tiles": "OpenStreetMap",
@@ -743,15 +642,10 @@ def make_base_map(center, zoom_start, basemap_name):
     return folium.Map(location=center, zoom_start=zoom_start, tiles=bm["tiles"])
 
 
-# build_node_popup_html sekarang berada di uvip_core.py (logika murni,
-# diimpor lewat blok import di atas) agar dapat diuji tanpa Streamlit.
-
-
 # ----------------------------------------------------------------------------
 # 2. SIDEBAR
 # ----------------------------------------------------------------------------
 
-# CSS tambahan untuk sidebar dengan styling khusus untuk expander
 st.markdown(
     """
     <style>
@@ -780,25 +674,12 @@ st.markdown(
         color: white !important;
         border: 1px solid rgba(255, 255, 0, 0.3);
     }
-    
-    /* Atur warna slider di luar expander */
     [data-testid="stSidebar"] .stSlider > div > div > div {
         background-color: rgba(255,255,255,0.3) !important;
     }
     [data-testid="stSidebar"] .stSlider > div > div > div > div {
         background-color: #ffffff !important;
     }
-    
-    /* ===== EXPANDER DENGAN BACKGROUND HITAM DAN BORDER PUTIH BOLD =====
-       Streamlit versi terbaru (>=1.3x) tidak lagi memakai class lama
-       ".streamlit-expanderHeader" / ".streamlit-expanderContent" — kini
-       memakai elemen HTML5 <details>/<summary> dengan atribut
-       data-testid="stExpander" / "stExpanderDetails". Selector lama
-       dipertahankan untuk kompatibilitas mundur, ditambah selector baru
-       agar box & tulisan tetap terlihat (border putih bold, latar hitam,
-       teks putih bold) baik saat expander ditutup maupun dibuka. */
-
-    /* Container utama expander (selector baru + lama) */
     [data-testid="stSidebar"] [data-testid="stExpander"],
     [data-testid="stSidebar"] .streamlit-expander {
         background-color: #1a1a1a !important;
@@ -808,9 +689,6 @@ st.markdown(
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
     }
-
-    /* Header/summary expander — background hitam, border putih bold,
-       berlaku baik expander tertutup maupun terbuka */
     [data-testid="stSidebar"] [data-testid="stExpander"] summary,
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderHeader"],
     [data-testid="stSidebar"] .streamlit-expanderHeader {
@@ -823,8 +701,6 @@ st.markdown(
         cursor: pointer;
         letter-spacing: 0.5px;
     }
-
-    /* Teks label di dalam summary (p/span/div) — dipaksa putih bold */
     [data-testid="stSidebar"] [data-testid="stExpander"] summary p,
     [data-testid="stSidebar"] [data-testid="stExpander"] summary span,
     [data-testid="stSidebar"] [data-testid="stExpander"] summary div,
@@ -833,32 +709,23 @@ st.markdown(
         font-weight: 700 !important;
         text-shadow: none !important;
     }
-
-    /* Hover effect untuk header */
     [data-testid="stSidebar"] [data-testid="stExpander"] summary:hover,
     [data-testid="stSidebar"] .streamlit-expanderHeader:hover {
         background-color: #000000 !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
     }
-
-    /* Warna icon chevron - putih */
     [data-testid="stSidebar"] [data-testid="stExpander"] summary svg,
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderToggleIcon"],
     [data-testid="stSidebar"] .streamlit-expanderHeader svg {
         color: #ffffff !important;
         fill: #ffffff !important;
     }
-
-    /* Content expander (selector baru + lama) - Background hitam dengan
-       border putih, hanya border atas dipisah agar menyatu dengan header */
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"],
     [data-testid="stSidebar"] .streamlit-expanderContent {
         background-color: #1a1a1a !important;
         padding: 16px 16px 20px 16px !important;
         border-top: 1px solid rgba(255,255,255,0.35) !important;
     }
-
-    /* Teks di dalam expander - warna putih */
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] .stMarkdown,
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] .stSlider label,
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] .stSlider p,
@@ -870,8 +737,6 @@ st.markdown(
         color: #ffffff !important;
         text-shadow: none !important;
     }
-    
-    /* Slider di dalam expander - dengan latar putih transparan */
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] .stSlider > div > div > div,
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider > div > div > div {
         background-color: rgba(255,255,255,0.2) !important;
@@ -884,24 +749,16 @@ st.markdown(
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider label {
         color: #ffffff !important;
     }
-    
-    /* Nilai slider di dalam expander - putih (label/caption di bawah slider) */
     [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] .stSlider .stMarkdown,
     [data-testid="stSidebar"] .streamlit-expanderContent .stSlider .stMarkdown {
         color: #ffffff !important;
     }
-
-    /* Angka nilai slider (gelembung mengambang di atas thumb) — testid
-       resmi Streamlit adalah "stSliderThumbValue". Dibuat MERAH & bold agar
-       kontras dan mudah terbaca di atas latar box hitam maupun terang. */
     [data-testid="stSidebar"] [data-testid="stSliderThumbValue"],
     [data-testid="stSidebar"] [data-testid="stSliderThumbValue"] * {
         color: #ff1a1a !important;
         -webkit-text-fill-color: #ff1a1a !important;
         font-weight: 800 !important;
     }
-    
-    /* Button di dalam sidebar */
     [data-testid="stSidebar"] .stButton button {
         background-color: rgba(255, 255, 255, 0.15) !important;
         color: white !important;
@@ -910,8 +767,6 @@ st.markdown(
     [data-testid="stSidebar"] .stButton button:hover {
         background-color: rgba(255, 255, 255, 0.25) !important;
     }
-    
-    /* Selectbox */
     [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
         background-color: rgba(0, 0, 0, 0.2) !important;
         border-radius: 6px;
@@ -919,13 +774,9 @@ st.markdown(
     [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
         color: white !important;
     }
-    
-    /* Checkbox */
     [data-testid="stSidebar"] .stCheckbox label {
         color: white !important;
     }
-    
-    /* Scrollbar sidebar */
     [data-testid="stSidebar"] ::-webkit-scrollbar {
         width: 6px;
     }
@@ -939,15 +790,11 @@ st.markdown(
     [data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.5);
     }
-    
-    /* Hilangkan background pada main content */
     .main .block-container {
         background-color: transparent !important;
         backdrop-filter: none !important;
         padding: 1rem 2rem;
     }
-    
-    /* Card metric */
     div[data-testid="metric-container"] {
         background-color: rgba(255, 255, 255, 0.92) !important;
         border-radius: 10px;
@@ -955,8 +802,6 @@ st.markdown(
         border: 1px solid rgba(200, 200, 200, 0.3);
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    
-    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         background-color: rgba(255, 255, 255, 0.85) !important;
         border-radius: 8px;
@@ -1022,8 +867,6 @@ with st.sidebar.expander("➕ Tambah koridor baru (upload file)", expanded=False
             template_df.to_excel(writer, index=False, sheet_name="Template Koridor")
         template_xlsx_bytes = template_xlsx_buf.getvalue()
     except ImportError:
-        # openpyxl belum terpasang di server — fallback diam-diam ke CSV
-        # supaya tombol tetap berfungsi (lihat requirements.txt).
         template_xlsx_bytes = None
 
     if template_xlsx_bytes:
@@ -1079,7 +922,6 @@ if not uploaded_df.empty:
 
 corridor_names = sorted(data_all["corridor"].unique()) if not data_all.empty else []
 
-# selected_corridors tetap berupa list agar logika filtering di bawah tetap kompatibel.
 selected_corridor = st.sidebar.selectbox(
     "Pilih koridor / ruang terbuka",
     options=corridor_names,
@@ -1094,11 +936,6 @@ st.sidebar.caption("Geser untuk mensimulasikan skenario preferensi publik / kebi
 
 weights = {}
 
-# Terapkan reset (jika diminta lewat tombol) SEBELUM slider dibuat — Streamlit
-# melarang st.session_state milik sebuah widget diubah SETELAH widget itu
-# diinstansiasi pada run yang sama (menyebabkan StreamlitWidgetAlreadyInstantiatedError).
-# Maka tombol di bawah hanya menyalakan flag lalu rerun; flag ini dibaca &
-# dibersihkan di sini, sebelum loop st.slider() berjalan.
 if st.session_state.get("_reset_weights_pending", False):
     for ind in INDICATORS:
         st.session_state[f"w_{ind}"] = 1.0
@@ -1126,7 +963,6 @@ if not df.empty:
 # 3. HEADER
 # ----------------------------------------------------------------------------
 
-# Set header dengan background Digital_twin_Kota.jpg
 if header_bg_set:
     st.markdown(
         """
@@ -1143,7 +979,6 @@ if header_bg_set:
         unsafe_allow_html=True,
     )
 else:
-    # Fallback jika gambar tidak ditemukan
     st.markdown(
         """
         <div style="padding:1.1rem 1.4rem;border-radius:14px;
@@ -1340,14 +1175,7 @@ UVI merupakan indeks komposit berbasis 8 indikator visual. Rekomendasi ini adala
 
 
 def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
-    """Membangun versi editable Policy Brief UVI dalam format Word (.docx).
-
-    Struktur dan isi dokumen disamakan dengan policy_brief_pdf_bytes() —
-    ringkasan metrik, 8 bagian (Pesan Kebijakan s.d. Catatan Metodologis),
-    tabel matriks prioritas koridor, diagnosis per indikator, rekomendasi
-    kebijakan, dan daftar node prioritas — sehingga versi Word dan versi PDF
-    berisi informasi yang sama persis, hanya berbeda format berkas.
-    """
+    """Membangun versi editable Policy Brief UVI dalam format Word (.docx)."""
     if not DOCX_AVAILABLE:
         return None
     if corridor_df.empty or indicator_df.empty:
@@ -1361,7 +1189,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
 
     doc = Document()
 
-    # Margin halaman (setara ~16-17mm seperti versi PDF)
     for section in doc.sections:
         section.top_margin = Cm(1.7)
         section.bottom_margin = Cm(1.6)
@@ -1392,7 +1219,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
         if color_hex:
             run.font.color.rgb = RGBColor.from_string(color_hex)
 
-    # ---- Judul ----
     title = doc.add_heading("POLICY BRIEF", level=0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     subtitle = doc.add_heading("Perancangan Kota Berbasis Urban Visual Index (UVI)", level=1)
@@ -1403,7 +1229,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
     scope_run.font.size = Pt(9.5)
     scope_run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
 
-    # ---- Ringkasan metrik (setara tabel metrik di PDF) ----
     metric_table = doc.add_table(rows=2, cols=4)
     metric_table.style = "Table Grid"
     headers = ["Koridor prioritas", "UVI terendah", "Indikator terlemah", "Node prioritas"]
@@ -1423,7 +1248,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
         return p
 
     def add_dash_bullet(html_parts):
-        """html_parts: list of (text, bold) tuples, rendered as one paragraph with a leading dash."""
         p = doc.add_paragraph()
         p.add_run("- ")
         for text, bold in html_parts:
@@ -1431,7 +1255,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
             r.bold = bold
         return p
 
-    # ---- 1. Pesan Kebijakan ----
     doc.add_heading("1. Pesan Kebijakan", level=1)
     add_body(
         "Hasil UVI digunakan sebagai instrumen diagnosis kualitas visual ruang terbuka pada "
@@ -1440,7 +1263,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
         "dan perlindungan karakter ruang."
     )
 
-    # ---- 2. Temuan Utama ----
     doc.add_heading("2. Temuan Utama", level=1)
     add_dash_bullet([
         ("Koridor dengan prioritas intervensi tertinggi: ", False),
@@ -1465,7 +1287,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
         (".", False),
     ])
 
-    # ---- 3. Matriks Prioritas Koridor ----
     doc.add_heading("3. Matriks Prioritas Koridor", level=1)
     mcols = ["Koridor", "UVI", "Kategori", "Prioritas 1", "Nilai", "Prioritas 2", "Nilai"]
     mtable = doc.add_table(rows=1, cols=len(mcols))
@@ -1486,7 +1307,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
     set_col_widths(mtable, [3.6, 1.6, 2.4, 3.6, 1.7, 3.6, 1.7])
     doc.add_paragraph()
 
-    # ---- 4. Diagnosis Indikator dan Arahan Perancangan ----
     doc.add_heading("4. Diagnosis Indikator dan Arahan Perancangan", level=1)
     for _, r in indicator_df.iterrows():
         p = doc.add_paragraph()
@@ -1501,7 +1321,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
             run.font.size = Pt(9)
         doc.add_paragraph().paragraph_format.space_after = Pt(2)
 
-    # ---- 5. Rekomendasi Kebijakan Perancangan Kota ----
     doc.add_heading("5. Rekomendasi Kebijakan Perancangan Kota", level=1)
     recommendations = [
         ("Prioritas berbasis node.", "Fokuskan investasi awal pada node UVI < 5 sebagai lokasi pilot improvement dan gunakan indikator terendah sebagai dasar diagnosis desain."),
@@ -1519,7 +1338,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
         p.add_run(desc)
         p.paragraph_format.space_after = Pt(6)
 
-    # ---- 6. Daftar Node Prioritas ----
     if not node_df.empty:
         doc.add_heading("6. Daftar Node Prioritas", level=1)
         ncols = ["Koridor", "Node", "UVI", "Prioritas"]
@@ -1543,7 +1361,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
             note_run.font.size = Pt(8.5)
         doc.add_paragraph()
 
-    # ---- 7. Tata Kelola Implementasi ----
     doc.add_heading("7. Tata Kelola Implementasi", level=1)
     add_body(
         "UVI dapat digunakan sebagai dashboard monitoring lintas perangkat daerah untuk "
@@ -1553,7 +1370,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
         "pengguna ruang."
     )
 
-    # ---- 8. Catatan Metodologis ----
     doc.add_heading("8. Catatan Metodologis", level=1)
     add_body(
         "UVI merupakan indeks komposit berbasis 8 indikator visual. Rekomendasi dalam policy "
@@ -1575,7 +1391,6 @@ def policy_brief_docx_bytes(corridor_df, indicator_df, node_df, selected_scope):
     doc.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
-
 
 
 def _pdf_safe(text):
@@ -1650,7 +1465,6 @@ def policy_brief_pdf_bytes(corridor_df, indicator_df, node_df, selected_scope):
         subtitle
     ))
 
-    # Executive summary / key metrics
     metric_data = [
         [Paragraph("Koridor prioritas", small), Paragraph("UVI terendah", small),
          Paragraph("Indikator terlemah", small), Paragraph("Node prioritas", small)],
@@ -1788,8 +1602,9 @@ def policy_brief_pdf_bytes(corridor_df, indicator_df, node_df, selected_scope):
     doc.build(story, onFirstPage=add_page_number, onLaterPages=add_page_number)
     return buffer.getvalue()
 
+
 # ----------------------------------------------------------------------------
-# TAB 1 — PETA HOTSPOT (heatmap + node fotogenik, mengacu pada visual acuan)
+# TAB 1 — PETA HOTSPOT
 # ----------------------------------------------------------------------------
 with tab_map:
     left, right = st.columns([3, 1])
@@ -1868,7 +1683,7 @@ with tab_map:
     )
 
 # ----------------------------------------------------------------------------
-# TAB 2 — INDIKATOR VISUAL (radar + breakdown kelas piksel)
+# TAB 2 — INDIKATOR VISUAL
 # ----------------------------------------------------------------------------
 with tab_indicators:
     c1, c2 = st.columns([1, 1])
@@ -1929,7 +1744,7 @@ with tab_indicators:
         st.plotly_chart(box_fig, use_container_width=True)
 
 # ----------------------------------------------------------------------------
-# TAB 3 — SIMULASI SKENARIO (what-if penataan ruang terbuka)
+# TAB 3 — SIMULASI SKENARIO
 # ----------------------------------------------------------------------------
 with tab_sim:
     st.markdown(
@@ -2039,7 +1854,6 @@ with tab_policy:
     if corridor_pb.empty:
         st.info("Belum tersedia data UVI yang dapat diterjemahkan menjadi policy brief.")
     else:
-        # Ringkasan eksekutif
         p1, p2, p3, p4 = st.columns(4)
         p1.metric("Koridor prioritas", str(corridor_pb.iloc[0]["Koridor"]))
         p2.metric("UVI terendah", f"{corridor_pb.iloc[0]['Rata-rata UVI']:.2f}")
@@ -2066,19 +1880,19 @@ with tab_policy:
 Fokuskan anggaran pada node dengan UVI < 5.00. Intervensi sebaiknya berbasis masalah dominan yang ditunjukkan indikator terendah, bukan sekadar beautifikasi.
 
 **B. Ruang pejalan kaki dan complete street**  
-Jika *Ground Accessibility* rendah, prioritaskan kontinuitas trotoar, universal access, penyeberangan, dan penghilangan hambatan. Pedoman nasional fasilitas pejalan kaki menetapkan jenis, fungsi, penempatan, dimensi, persyaratan teknis, dan prosedur perencanaan fasilitas pejalan kaki. citeturn0search11
+Jika *Ground Accessibility* rendah, prioritaskan kontinuitas trotoar, universal access, penyeberangan, dan penghilangan hambatan.
 
 **C. Green streets dan kenyamanan visual**  
-Jika *Vegetation Coverage* rendah, prioritaskan canopy pohon, planting strip, pocket green, dan green buffer. Pendekatan ini sejalan dengan prinsip penyediaan/pemanfaatan RTH perkotaan serta manfaat sosial-lingkungan ruang hijau. citeturn0search8turn0search12
+Jika *Vegetation Coverage* rendah, prioritaskan canopy pohon, planting strip, pocket green, dan green buffer.
 
 **D. Aktivasi ruang publik**  
-Jika *Human Activity* rendah, arahkan desain pada active frontage, seating, ruang interaksi, pencahayaan, dan programming kegiatan. Tujuannya meningkatkan vitalitas tanpa mengorbankan aksesibilitas dan kenyamanan.
+Jika *Human Activity* rendah, arahkan desain pada active frontage, seating, ruang interaksi, pencahayaan, dan programming kegiatan.
 
 **E. Manajemen kendaraan dan streetscape**  
-Jika *Vehicle Intensity* menjadi indikator lemah, pertimbangkan traffic calming, manajemen parkir, redistribusi ruang jalan, dan prioritas pejalan kaki. Konsep complete street dapat menjadi kerangka desain ruang manfaat jalan yang lebih utuh dan humanis. citeturn0search4
+Jika *Vehicle Intensity* menjadi indikator lemah, pertimbangkan traffic calming, manajemen parkir, redistribusi ruang jalan, dan prioritas pejalan kaki.
 
 **F. Identitas kota dan heritage**  
-Jika *Heritage Dominance* rendah pada koridor bersejarah, gunakan pedoman fasad, material, signage, pencahayaan, dan interpretasi heritage untuk memperkuat identitas tanpa menghilangkan fungsi kontemporer.
+Jika *Heritage Dominance* rendah pada koridor bersejarah, gunakan pedoman fasad, material, signage, pencahayaan, dan interpretasi heritage.
 """)
 
         st.markdown("#### 4. Prioritas node untuk tindakan cepat")
@@ -2109,8 +1923,6 @@ Jika *Heritage Dominance* rendah pada koridor bersejarah, gunakan pedoman fasad,
                 icon="📄",
             )
 
-        # Versi Word (.docx) disediakan sebagai format editable/backup, agar
-        # dapat langsung diedit di Microsoft Word / Google Docs.
         with st.expander("Versi editable (Word / .docx)", expanded=False):
             pb_docx = policy_brief_docx_bytes(corridor_pb, indicator_pb, node_pb, pb_scope)
             if pb_docx is not None:
@@ -2136,7 +1948,7 @@ Jika *Heritage Dominance* rendah pada koridor bersejarah, gunakan pedoman fasad,
         )
 
 # ----------------------------------------------------------------------------
-# TAB 5 — TENTANG & METODOLOGI
+# TAB 6 — TENTANG & METODOLOGI
 # ----------------------------------------------------------------------------
 with tab_about:
     st.markdown("### 📋 Tentang Platform")
@@ -2148,14 +1960,14 @@ with tab_about:
         Berbasis AI untuk Smart City Kota Malang"* 
         """
     )
-    
+
     st.markdown(
         """
         **Kata kunci konteks:** Urban Visual Index · Street View Imagery ·
         Artificial Intelligence · Ruang Terbuka Kota · Smart City
         """
     )
-    
+
     st.markdown("#### 🎯 Alur Metodologi yang Diadaptasi")
     st.markdown(
         """
@@ -2167,8 +1979,7 @@ with tab_about:
         3. **Perhitungan 8 indikator visual komposit**: Building Visibility,
            Vegetation Coverage, Sky Openness, Ground Accessibility, Human Activity,
            Vehicle Intensity, Traffic Infrastructure, Heritage Dominance.
-        4. **Pembobotan & agregasi** menjadi **Urban Visual Index (UVI)** — dijelaskan
-           rinci pada bagian 🧮 di bawah.
+        4. **Pembobotan & agregasi** menjadi **Urban Visual Index (UVI)**.
         5. **Visualisasi & simulasi** pada dashboard: peta hotspot, radar indikator,
            simulasi what-if perubahan parameter visual, dan perbandingan antar
            koridor.
@@ -2181,66 +1992,29 @@ with tab_about:
         """
         UVI adalah **indeks komposit** (*composite indicator*) yang dibentuk dari 8 indikator
         visual, mengikuti alur umum konstruksi indeks komposit: normalisasi → pembobotan →
-        agregasi linear (OECD/EU-JRC, 2008). Tahapannya sebagai berikut.
+        agregasi linear (OECD/EU-JRC, 2008).
         """
     )
 
     st.markdown("**Langkah 1 — Normalisasi indikator (dari deteksi AI ke skala 0–1)**")
-    st.markdown(
-        """
-        Setiap indikator visual komposit $i$ (mis. *Vegetation Coverage*, *Sky Openness*)
-        dihitung sebagai proporsi luas kelas semantik hasil segmentasi AI yang tergabung ke
-        dalam indikator tersebut, mengikuti prinsip *Green View Index* pada studi berbasis
-        citra *street-level* (Yang, Zhao & Gong, 2009; Li *et al.*, 2015; Long & Liu, 2017):
-        """
-    )
     st.latex(r"""
         x_i \;=\; \frac{\displaystyle\sum_{c \,\in\, K_i} p_c}{100}\,, \qquad x_i \in [0,1]
     """)
-    st.caption(
-        "dengan $p_c$ = persentase piksel/area kelas visual $c$ (Ground, Building, "
-        "Vegetation, Sky, Human, Vehicle, dst.) hasil *semantic segmentation*, dan "
-        "$K_i$ = himpunan kelas visual yang menyusun indikator $i$."
-    )
 
     st.markdown("**Langkah 2 — Pembobotan (weighting)**")
     st.markdown(
         """
         Setiap indikator $i$ diberi bobot $w_i$ yang dapat diubah interaktif melalui panel
         *⚙️ Bobot Indikator UVI* pada sidebar (rentang $0 \\le w_i \\le 2$, default
-        $w_i = 1$ untuk seluruh indikator agar tidak ada yang diprioritaskan). Pergeseran
-        bobot mensimulasikan skenario preferensi publik/kebijakan penataan ruang terbuka —
-        pendekatan ini sejalan dengan prinsip *expert/stakeholder weighting* pada literatur
-        indeks komposit (Nardo *et al.*, 2005; OECD/EU-JRC, 2008), dan dapat dikembangkan
-        lebih lanjut memakai *Analytic Hierarchy Process* / AHP untuk pembobotan berbasis
-        perbandingan berpasangan (Saaty, 1980).
+        $w_i = 1$).
         """
     )
 
-    st.markdown("**Langkah 3 — Agregasi linear terbobot (weighted linear aggregation)**")
-    st.markdown(
-        "Kedelapan indikator ternormalisasi $x_i$ diagregasi menjadi satu skor UVI melalui "
-        "**rata-rata terbobot** (*weighted arithmetic mean*), lalu diskalakan ke rentang 0–10:"
-    )
+    st.markdown("**Langkah 3 — Agregasi linear terbobot**")
     st.latex(r"""
         \mathrm{UVI} \;=\; \left(\frac{\displaystyle\sum_{i=1}^{8} w_i \, x_i}
         {\displaystyle\sum_{i=1}^{8} w_i}\right) \times S\,, \qquad S = 10
     """)
-    st.caption(
-        "Bentuk ini adalah agregasi linear (*compensatory*): skor rendah pada satu indikator "
-        "dapat diimbangi (*offset*) oleh skor tinggi pada indikator lain, sesuai sifat agregasi "
-        "linear pada Handbook OECD/EU-JRC (2008). UVI bernilai 0–10; semakin tinggi, semakin "
-        "baik kualitas visual komposit ruang terbuka pada node/koridor tersebut."
-    )
-    st.markdown(
-        """
-        Formula yang sama dipakai pada dua konteks di platform ini:
-        - **Skor UVI aktual** tiap node/koridor (tab *Overview* & *Detail Node*) — $x_i$
-          berasal dari data hasil deteksi AI atas citra eksisting.
-        - **Simulasi what-if** (tab *Simulasi Skenario*) — $x_i$ digeser manual pada slider
-          untuk membandingkan skor *UVI Eksisting* vs. *UVI Skenario* pada node yang sama.
-        """
-    )
 
     st.markdown("---")
     st.markdown("#### 📚 Sumber Referensi")
@@ -2248,44 +2022,29 @@ with tab_about:
         """
         1. OECD/European Union/JRC-European Commission (2008). *Handbook on Constructing
            Composite Indicators: Methodology and User Guide*. OECD Publishing, Paris.
-           [doi:10.1787/9789264043466-en](https://doi.org/10.1787/9789264043466-en)
         2. Nardo, M., Saisana, M., Saltelli, A., & Tarantola, S. (2005). *Tools for
            Composite Indicators Building*. OECD Statistics Working Papers No. 2005/03.
-           [doi:10.1787/533411815016](https://doi.org/10.1787/533411815016)
-        3. Saaty, T. L. (1980). *The Analytic Hierarchy Process: Planning, Priority
-           Setting, Resource Allocation*. McGraw-Hill, New York.
+        3. Saaty, T. L. (1980). *The Analytic Hierarchy Process*. McGraw-Hill, New York.
         4. Yang, J., Zhao, L., McBride, J., & Gong, P. (2009). Can you see green?
-           Assessing the visibility of urban forests in cities. *Landscape and Urban
-           Planning*, 91(2), 97–104.
+           *Landscape and Urban Planning*, 91(2), 97–104.
         5. Li, X., Zhang, C., Li, W., Ricard, R., Meng, Q., & Zhang, W. (2015). Assessing
            street-level urban greenery using Google Street View and a modified Green
            View Index. *Urban Forestry & Urban Greening*, 14(3), 675–685.
-        6. Long, Y., & Liu, L. (2017). How green are the streets? An analysis for
-           central areas of Chinese cities using Tencent Street View. *PLoS ONE*,
-           12(2), e0171110. [doi:10.1371/journal.pone.0171110](https://doi.org/10.1371/journal.pone.0171110)
+        6. Long, Y., & Liu, L. (2017). How green are the streets? *PLoS ONE*, 12(2), e0171110.
         7. Zhang, F., Zhou, B., Liu, L., Liu, Y., Fung, H. H., Lin, H., & Ratti, C.
            (2018). Measuring human perceptions of a large-scale urban region using
            machine learning. *Landscape and Urban Planning*, 180, 148–160.
-           [doi:10.1016/j.landurbplan.2018.08.020](https://doi.org/10.1016/j.landurbplan.2018.08.020)
         8. Ye, Y., Zeng, W., Shen, Q., Zhang, X., & Lu, Y. (2019). The visual quality of
-           streets: a human-centred continuous measurement based on machine learning
-           algorithms and street view images. *Environment and Planning B: Urban
-           Analytics and City Science*, 46(8), 1439–1457.
+           streets. *Environment and Planning B*, 46(8), 1439–1457.
         9. Gong, F.-Y., Zeng, Z.-C., Zhang, F., Li, X., Ng, E., & Norford, L. K. (2018).
-           Mapping sky, tree, and building view factors of street canyons in a
-           high-density urban environment. *Building and Environment*, 134, 155–167.
+           Mapping sky, tree, and building view factors of street canyons. *Building and
+           Environment*, 134, 155–167.
         10. Biljecki, F., & Ito, K. (2023). Street view imagery in urban analytics and
             GIS: A review. *Landscape and Urban Planning*, 215, 104217.
         """
     )
-    st.caption(
-        "Referensi 1–3 mendasari metode pembobotan & agregasi indeks komposit yang "
-        "diadaptasi UVIP Malang; referensi 4–10 mendasari konstruksi indikator visual "
-        "berbasis proporsi elemen segmentasi-semantik dari citra *street-level*."
-    )
     st.markdown("#### 👨‍🔬 Tim Peneliti UVIP Malang - UNIVERSITAS BRAWIJAYA")
-    
-    # Data tim peneliti
+
     researchers = [
         {
             "name": "Dr. Herry Santosa",
@@ -2318,18 +2077,15 @@ with tab_about:
             "role": "Anggota Tim Peneliti"
         }
     ]
-    
-    # Tampilkan profil peneliti dalam grid
+
     cols = st.columns(len(researchers))
     for idx, (col, researcher) in enumerate(zip(cols, researchers)):
         with col:
-            # Coba load gambar
             try:
                 if os.path.exists(researcher["image"]):
                     img = Image.open(researcher["image"])
                     st.image(img, use_container_width=True)
                 else:
-                    # Fallback jika gambar tidak ditemukan
                     st.markdown(
                         f"""
                         <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
@@ -2355,13 +2111,13 @@ with tab_about:
                     """,
                     unsafe_allow_html=True
                 )
-            
+
             st.markdown(f"**{researcher['name']}**")
             st.caption(f"*{researcher['role']}*")
             st.caption(f"📌 {researcher['expertise']}")
-    
+
 # ----------------------------------------------------------------------------
-# TAB 6 — DATA & UNDUH
+# TAB 7 — DATA & UNDUH
 # ----------------------------------------------------------------------------
 with tab_data:
     st.markdown("#### Tabel Data Node (hasil parsing dari Google Sheets)")
