@@ -43,6 +43,25 @@ from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 from PIL import Image
 
+# requests + openpyxl digunakan untuk mengambil FOTO NODE yang di-insert
+# langsung ke sel Google Sheets ("Insert > Image > in cell"). Foto semacam
+# ini TIDAK bisa dibaca dari ekspor CSV (CSV tidak menyimpan gambar sama
+# sekali) — satu-satunya cara publik untuk mendapatkannya kembali adalah
+# lewat ekspor .xlsx, di mana gambar ikut tersimpan sebagai media asli.
+# Import dibuat defensif agar aplikasi tetap berjalan tanpa foto (fallback
+# ke link "buka sumber foto") apabila salah satu paket belum terpasang.
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+
+try:
+    import openpyxl
+    OPENPYXL_AVAILABLE = True
+except ImportError:
+    OPENPYXL_AVAILABLE = False
+
 # ReportLab digunakan untuk menghasilkan policy brief PDF secara langsung dari
 # hasil analisis UVI. Import dibuat defensif agar aplikasi tetap dapat berjalan
 # dan menampilkan pesan yang jelas apabila paket belum tersedia di server.
@@ -133,14 +152,130 @@ PHOTO_SOURCES = {
     },
 }
 
+# ID spreadsheet sumber (sama untuk seluruh koridor; hanya gid/tab yang
+# berbeda) dan nama tab per gid — dipakai untuk mengambil foto yang
+# di-insert langsung ke sel ("Insert > Image > in cell"), yang HANYA bisa
+# diambil lewat ekspor .xlsx (CSV tidak menyimpan gambar in-cell sama
+# sekali). Nama tab harus persis sama dengan nama tab di Google Sheets.
+UVIP_SPREADSHEET_ID = "1XrgdsW7IVULMQ3LIiEocPAbuFUGBkAnaPBYO0N2gxMA"
+GID_TO_SHEET_TAB = {
+    "385636298": "ALUN-ALUN MERDEKA",
+    "1869212551": "KAYUTANGAN 1",
+    "891123454": "LAFAYETTE-PLN",
+    "446487299": "KAYUTANGAN-TUGU",
+    "1062597004": "TUGU",
+}
+
+
+@st.cache_data(show_spinner=False, ttl=6 * 3600)
+def _download_uvip_workbook_bytes():
+    """Unduh seluruh workbook Google Sheets sebagai .xlsx (di-cache 6 jam).
+
+    Dilakukan sekali untuk seluruh koridor karena semua tab berada di satu
+    spreadsheet yang sama. Foto yang di-insert langsung ke sel HANYA ikut
+    terbawa pada ekspor .xlsx — ekspor CSV tidak bisa menyimpan gambar sama
+    sekali, itulah sebabnya foto sebelumnya tidak pernah muncul di popup.
+    """
+    if not (REQUESTS_AVAILABLE and OPENPYXL_AVAILABLE):
+        return None
+    url = f"https://docs.google.com/spreadsheets/d/{UVIP_SPREADSHEET_ID}/export?format=xlsx"
+    try:
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=60)
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "")
+        if "spreadsheet" not in content_type and "officedocument" not in content_type:
+            return None
+        return resp.content
+    except Exception:
+        return None
+
+
+def _guess_image_mime(img_obj):
+    fmt = getattr(img_obj, "format", None)
+    if fmt:
+        fmt = str(fmt).lower()
+        if fmt in ("jpeg", "jpg"):
+            return "image/jpeg"
+        if fmt in ("png", "gif", "bmp", "webp"):
+            return f"image/{fmt}"
+    return "image/jpeg"
+
+
+@st.cache_data(show_spinner=False, ttl=6 * 3600)
+def _extract_embedded_node_photos(gid: str):
+    """Ekstrak foto in-cell dari tab sesuai gid, dikembalikan sebagai dict
+    {kode_node: data_uri_base64} agar bisa langsung dipakai sebagai <img src>
+    tanpa bergantung pada URL publik eksternal.
+
+    Pola sheet: kode node berada tepat 1 kolom di sebelah kiri kolom foto,
+    pada baris yang sama (mis. kolom A=kode, B=foto; N=kode, O=foto).
+    """
+    if not (REQUESTS_AVAILABLE and OPENPYXL_AVAILABLE):
+        return {}
+    wb_bytes = _download_uvip_workbook_bytes()
+    if not wb_bytes:
+        return {}
+
+    tab_name = GID_TO_SHEET_TAB.get(str(gid))
+    if not tab_name:
+        return {}
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(wb_bytes), data_only=True)
+    except Exception:
+        return {}
+
+    sheet_name = tab_name if tab_name in wb.sheetnames else next(
+        (s for s in wb.sheetnames if s.strip().lower() == tab_name.strip().lower()),
+        None,
+    )
+    if not sheet_name:
+        return {}
+    ws = wb[sheet_name]
+
+    result = {}
+    for img_obj in getattr(ws, "_images", []):
+        anchor = getattr(img_obj, "anchor", None)
+        _from = getattr(anchor, "_from", None) if anchor is not None else None
+        if _from is None:
+            continue
+        r, c = _from.row, _from.col
+
+        kode = None
+        for col in (c - 1, c - 2):
+            if col < 0:
+                continue
+            val = ws.cell(row=r + 1, column=col + 1).value
+            if val is not None and str(val).strip():
+                kode = str(val).strip()
+                break
+        if not kode:
+            continue
+
+        try:
+            raw = img_obj.ref.getvalue() if hasattr(img_obj.ref, "getvalue") else img_obj._data()
+            mime = _guess_image_mime(img_obj)
+            b64 = base64.b64encode(raw).decode("ascii")
+            result[kode] = f"data:{mime};base64,{b64}"
+        except Exception:
+            continue
+    return result
+
 
 def _extract_first_url(value):
-    """Ambil URL pertama dari URL biasa, HYPERLINK(), IMAGE(), HTML, atau Markdown."""
+    """Ambil URL pertama dari URL biasa, HYPERLINK(), IMAGE(), HTML, atau Markdown.
+
+    Data URI base64 (mis. hasil ekstraksi foto in-cell) dikembalikan apa
+    adanya karena bukan URL http(s) biasa.
+    """
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return ""
     text = str(value).strip()
     if not text or text.lower() in {"nan", "none", "null"}:
         return ""
+
+    if text.startswith("data:"):
+        return text
 
     # URL di dalam formula Google Sheets, HTML, atau Markdown.
     m = re.search(r'https?://[^\"\'\s<>]+', text)
@@ -154,6 +289,8 @@ def _drive_image_url(url):
     if not url:
         return ""
     url = str(url).strip()
+    if url.startswith("data:"):
+        return url
     m = re.search(r'(?:/d/|id=)([A-Za-z0-9_-]{20,})', url)
     if m and ('drive.google.com' in url or 'docs.google.com' in url):
         file_id = m.group(1)
@@ -195,8 +332,11 @@ def _find_key_column(columns):
 def _attach_photo_urls(data, gid):
     """Tambahkan kolom foto dari tab Google Sheets sesuai gid.
 
-    Data analisis tetap berasal dari load_corridor(); CSV mentah hanya dibaca
-    untuk mencari kolom foto sehingga perubahan struktur kolom UVIP tidak rusak.
+    Sumber utama: foto yang di-insert langsung ke sel ("Insert > Image > in
+    cell") diambil dari ekspor .xlsx dan disimpan sebagai data URI base64,
+    sehingga bisa langsung dirender sebagai <img> di popup tanpa bergantung
+    pada URL publik eksternal. Pencocokan kolom teks URL pada CSV tetap
+    dipertahankan sebagai fallback untuk struktur sheet yang berbeda.
     """
     if data is None or data.empty:
         return data
@@ -206,6 +346,17 @@ def _attach_photo_urls(data, gid):
         out['foto'] = ''
     if 'foto_source' not in out.columns:
         out['foto_source'] = PHOTO_SOURCES.get(str(gid), {}).get('url', '')
+
+    # 0) Sumber utama: foto in-cell, dicocokkan lewat kolom kode node.
+    embedded = _extract_embedded_node_photos(str(gid))
+    if embedded:
+        key_col = 'kode' if 'kode' in out.columns else _find_key_column(out.columns)
+        if key_col is not None:
+            out['foto'] = out.apply(
+                lambda r: str(r.get('foto', '')).strip() or embedded.get(
+                    str(r.get(key_col, '')).strip(), ''
+                ), axis=1
+            )
 
     try:
         raw = pd.read_csv(_sheet_csv_url(str(gid)))
