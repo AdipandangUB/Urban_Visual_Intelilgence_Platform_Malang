@@ -4,7 +4,7 @@ UVIP Malang — Urban Visual Intelligence Platform
 Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan Berbasis AI
 untuk Smart City Kota Malang
 
-Dikembangkan mengacu pada proposal Penelitian Terapan:
+Dikembangkan mengacu pada Penelitian Terapan:
 "Pengembangan Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
 Berbasis AI untuk Smart City Kota Malang" dengan Peneliti Dr. Herry Santosa,Dr Adipandang Yudono,Dr Herman Tolle,Prof. Jenny Ernawati,
 Dr. Agung Setia Budi - Universitas Brawijaya.
@@ -89,10 +89,6 @@ except ImportError:
 # -----------------------------------------------------------------------------
 # Popup node + sumber foto dari repository GitHub
 # -----------------------------------------------------------------------------
-# Foto tidak lagi diambil dari kolom URL Google Sheets / Google Drive.
-# Sekarang setiap koridor punya folder foto sendiri di dalam repo GitHub,
-# dan setiap file foto namanya dicocokkan langsung dengan kolom "kode" pada
-# baris data koridor tersebut (mis. kode "TBS 1" -> file "TBS 1.jpg").
 
 GITHUB_OWNER = "AdipandangUB"
 GITHUB_REPO = "Urban_Visual_Intelilgence_Platform_Malang"
@@ -260,9 +256,6 @@ def build_node_popup_html(row, header_color: str) -> str:
     lat, lon = row.get('lat'), row.get('lon')
     uvi = row.get('UVI')
 
-    # Foto kini berupa raw.githubusercontent.com URL langsung (hasil
-    # pencocokan kode <-> nama file di _attach_photo_urls), jadi tidak perlu
-    # lagi konversi khusus Google Drive.
     foto = str(row.get('foto', '')).strip()
     source_url = _source_url_for_row(row)
 
@@ -509,7 +502,6 @@ for path in header_bg_paths:
         if header_bg_set:
             break
 
-# Bungkus fungsi murni dari uvip_core.py dengan cache Streamlit.
 _load_corridor_cached = st.cache_data(ttl=3600, show_spinner=False)(load_corridor)
 
 
@@ -896,7 +888,7 @@ if header_bg_set:
         <div class="header-with-bg">
             <h2>🏙️ UVIP Malang - <i>Urban Visual Intelligence Platform<i> Malang City</h2>
             <p>
-                Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
+                Decision Support System Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
                 Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
                 <i>Urban Visual Index (UVI)</i> dari citra <i>street-level</i>,
                 divalidasi persepsi publik, mendukung SDG 11.
