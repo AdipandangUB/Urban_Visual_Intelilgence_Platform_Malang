@@ -888,7 +888,7 @@ if header_bg_set:
         <div class="header-with-bg">
             <h2>🏙️ UVIP Malang - <i>Urban Visual Intelligence Platform<i> Malang City</h2>
             <p>
-                Decision Support System Model Sistem Simulasi Visual Digital Ruang Terbuka Perkotaan
+                Decision Support System Inteligensi Visual Digital Ruang Terbuka Perkotaan
                 Berbasis AI untuk <b>Smart City Kota Malang</b> — adaptasi
                 <i>Urban Visual Index (UVI)</i> dari citra <i>street-level</i>,
                 divalidasi persepsi publik, mendukung SDG 11.
