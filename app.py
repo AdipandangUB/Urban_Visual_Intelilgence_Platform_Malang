@@ -2059,16 +2059,6 @@ with tab_data:
         file_name=f"uvip_malang_{datetime.now():%Y%m%d}.csv", mime="text/csv",
     )
 
-    st.markdown("---")
-    st.markdown("#### Sumber Data Google Sheets")
-    for gid, meta in CORRIDOR_SHEETS.items():
-        st.markdown(f"- **{meta['name']}** — [buka spreadsheet]({_sheet_csv_url(gid).split('/export')[0]}/edit?gid={gid})")
-
-    st.markdown("#### Sumber Foto (Repository GitHub)")
-    for gid, meta in PHOTO_SOURCES.items():
-        folder_url = _github_folder_browse_url(meta.get("folder", ""))
-        st.markdown(f"- **{meta['name']}** — [buka folder foto]({folder_url})")
-
 st.markdown("---")
 st.caption(
     "WebGIS Analytics dikembangkan oleh Tim UVIP Malang - Universitas Brawijaya "
